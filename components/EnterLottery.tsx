@@ -23,6 +23,10 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { formatNumber } from "@/lib/formatNumber";
 
+interface CasperAccount {
+  public_key: string;
+}
+
 interface EnterLotteryProps {
   onNavigate: (page: string) => void;
   onEntrySubmit: (entry: {
@@ -33,10 +37,11 @@ interface EnterLotteryProps {
     cost: number;
     status: "pending";
   }) => void;
+  activeAccount: CasperAccount | null;
+  onConnect: () => void;
 }
 
-export function EnterLottery({ onNavigate, onEntrySubmit }: EnterLotteryProps) {
-  const [isConnected, setIsConnected] = useState(false);
+export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConnect }: EnterLotteryProps) {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Contract configuration (these would come from smart contract queries)
@@ -49,19 +54,8 @@ export function EnterLottery({ onNavigate, onEntrySubmit }: EnterLotteryProps) {
   const currentRound = 1;
   const currentPlayId = 1;
 
-  const handleConnectWallet = () => {
-    setIsConnected(true);
-    toast.success("Wallet connected! 🎰", {
-      style: {
-        background: "#1a0f2e",
-        color: "#00ffff",
-        border: "2px solid #00ffff",
-      },
-    });
-  };
-
   const handleBuyTicket = () => {
-    if (!isConnected) {
+    if (!activeAccount) {
       toast.error("Please connect your wallet first", {
         style: {
           background: "#1a0f2e",
@@ -236,9 +230,9 @@ export function EnterLottery({ onNavigate, onEntrySubmit }: EnterLotteryProps) {
                 </div>
 
                 {/* Action Buttons */}
-                {!isConnected ? (
+                {!activeAccount ? (
                   <Button
-                    onClick={handleConnectWallet}
+                    onClick={onConnect}
                     className="w-full casino-gradient neon-glow-pink hover:scale-105 transition-transform h-14 cursor-pointer text-white rounded-xl"
                     style={{
                       textShadow:

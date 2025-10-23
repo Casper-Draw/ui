@@ -14,12 +14,18 @@ import {
   SheetDescription,
 } from "./ui/sheet";
 
+interface CasperAccount {
+  public_key: string;
+}
+
 interface HeaderProps {
   currentPage: string;
   onNavigate: (page: string) => void;
+  activeAccount: CasperAccount | null;
+  onConnect: () => void;
 }
 
-export function Header({ currentPage, onNavigate }: HeaderProps) {
+export function Header({ currentPage, onNavigate, activeAccount, onConnect }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleNavigate = (page: string) => {
@@ -74,13 +80,17 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
             Dashboard
           </button>
           <Button
+            onClick={(e) => {
+              e.preventDefault();
+              onConnect();
+            }}
             className="bg-[#E91E63] hover:bg-[#E91E63]/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer"
             style={{
               fontSize: "1.125rem",
               borderRadius: "5px",
             }}
           >
-            Connect
+            {activeAccount ? `${activeAccount.public_key.slice(0, 6)}...${activeAccount.public_key.slice(-4)}` : 'Connect'}
           </Button>
         </nav>
 
@@ -154,13 +164,17 @@ export function Header({ currentPage, onNavigate }: HeaderProps) {
               Dashboard
             </button>
             <Button
+              onClick={(e) => {
+                e.preventDefault();
+                onConnect();
+              }}
               className="bg-[#E91E63] hover:bg-[#E91E63]/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer mt-2"
               style={{
                 fontSize: "1.125rem",
                 borderRadius: "5px",
               }}
             >
-              Connect
+              {activeAccount ? `${activeAccount.public_key.slice(0, 6)}...${activeAccount.public_key.slice(-4)}` : 'Connect'}
             </Button>
           </nav>
 

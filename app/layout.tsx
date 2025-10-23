@@ -11,6 +11,7 @@ import "@fontsource/montserrat/600.css";
 import "@fontsource/montserrat/700.css";
 import "./globals.css";
 import { Toaster } from "sonner";
+import CasperProvider from "@/context/CasperProvider";
 
 export const metadata: Metadata = {
   title: "Casper Draw - Instant Lottery on Casper Network",
@@ -25,17 +26,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: "#1a0f2e",
-              color: "#00ffff",
-              border: "2px solid rgba(0, 255, 255, 0.5)",
-            },
-          }}
-        />
+        <div id="root" />
+        <CasperProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#1a0f2e",
+                color: "#00ffff",
+                border: "2px solid rgba(0, 255, 255, 0.5)",
+              },
+            }}
+          />
+        </CasperProvider>
       </body>
     </html>
   );
