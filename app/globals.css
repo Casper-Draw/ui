@@ -274,6 +274,62 @@
       drop-shadow(0 1px 4px rgba(0, 0, 0, 0.9));
   }
 
+  /* Jackpot glow effects */
+  .jackpot-text-glow-intense {
+    text-shadow: 0 0 20px rgba(253, 224, 71, 1), 0 0 40px rgba(253, 224, 71, 0.9),
+      0 0 60px rgba(253, 224, 71, 0.7), 0 0 80px rgba(253, 224, 71, 0.5);
+  }
+
+  .jackpot-box-glow-intense {
+    box-shadow: 0 0 40px rgba(234, 179, 8, 0.8), 0 0 80px rgba(234, 179, 8, 0.6),
+      0 0 120px rgba(234, 179, 8, 0.4), 0 0 160px rgba(234, 179, 8, 0.2);
+  }
+
+  .jackpot-box-glow-medium {
+    box-shadow: 0 0 30px rgba(234, 179, 8, 0.6), 0 0 60px rgba(234, 179, 8, 0.4),
+      0 0 90px rgba(234, 179, 8, 0.2);
+  }
+
+  .jackpot-filter-glow {
+    filter: drop-shadow(0 0 30px rgba(253, 224, 71, 0.8))
+      drop-shadow(0 0 60px rgba(253, 224, 71, 0.5));
+  }
+
+  /* Modal sizing utilities */
+  .modal-jackpot-size {
+    max-width: 95vw !important;
+    width: 1200px !important;
+  }
+
+  .modal-consolation-size {
+    max-width: 95vw !important;
+    width: 600px !important;
+  }
+
+  /* Toast theming */
+  .toast-casino-dark {
+    background: #1a0f2e;
+    color: #00ffff;
+    border: 2px solid rgba(0, 255, 255, 0.5);
+  }
+
+  .toast-casino-pink {
+    background: #1a0f2e;
+    color: #ff00ff;
+    border: 2px solid #ff00ff;
+  }
+
+  .toast-casino-gold {
+    background: #1a0f2e;
+    color: #ffd700;
+    border: 2px solid #ffd700;
+  }
+
+  /* Font weights */
+  .font-extra-bold {
+    font-weight: 800;
+  }
+
   /* Glowing HR Divider */
   .casino-divider {
     height: 2px;

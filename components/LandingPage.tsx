@@ -286,7 +286,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       </div>
 
       {/* Current Jackpot Section */}
-      <div className="-mt-24 md:mt-0 md:pt-[2.5px] pb-12 px-4">
+      <div className="-mt-24 md:mt-10 md:pt-[2.5px] pb-12 px-4">
         <div className="max-w-5xl mx-auto text-center">
           <div>
             <div className="flex items-center justify-center gap-3 md:gap-4 mb-6 md:mb-8 px-4">

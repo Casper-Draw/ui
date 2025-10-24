@@ -32,11 +32,7 @@ export default function RootLayout({
           <Toaster
             position="top-right"
             toastOptions={{
-              style: {
-                background: "#1a0f2e",
-                color: "#00ffff",
-                border: "2px solid rgba(0, 255, 255, 0.5)",
-              },
+              className: "toast-casino-dark",
             }}
           />
         </CasperProvider>

@@ -284,10 +284,7 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                 {/* Current Jackpot */}
                 <div className="bg-black/30 rounded-xl p-3 md:p-4 border border-yellow-500/30">
                   <div className="text-center">
-                    <p
-                      className="text-white text-sm md:text-base mb-2"
-                      style={{ fontWeight: 800 }}
-                    >
+                    <p className="text-white text-sm md:text-base mb-2 font-extra-bold">
                       Current Jackpot
                     </p>
                     <motion.div
@@ -308,10 +305,7 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                     >
                       {formatNumber(prizePool)} CSPR
                     </motion.div>
-                    <p
-                      className="text-[10px] md:text-sm text-white"
-                      style={{ fontWeight: 800 }}
-                    >
+                    <p className="text-[10px] md:text-sm text-white font-extra-bold">
                       Win 100% of prize pool!
                     </p>
                   </div>

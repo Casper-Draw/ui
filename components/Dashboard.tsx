@@ -161,19 +161,9 @@ DashboardProps) {
           </div>
           <Button
             onClick={() => onNavigate("enter")}
-            className="casino-gradient neon-glow-pink hover:scale-105 transition-transform cursor-pointer text-[rgb(255,255,255)] rounded-xl"
-            style={{
-              textShadow:
-                "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.9)",
-            }}
+            className="casino-gradient neon-glow-pink hover:scale-105 transition-transform cursor-pointer text-white rounded-xl text-shadow-strong"
           >
-            <Sparkles
-              className="w-4 h-4 mr-2"
-              style={{
-                filter:
-                  "drop-shadow(0 2px 8px rgba(0,0,0,0.8)) drop-shadow(0 1px 4px rgba(0,0,0,0.9))",
-              }}
-            />
+            <Sparkles className="w-4 h-4 mr-2 icon-shadow-strong" />
             Buy New Ticket
           </Button>
         </div>
@@ -299,17 +289,17 @@ DashboardProps) {
         {/* Tabs */}
         <Tabs defaultValue="pending" className="space-y-6">
           <div className="flex justify-center md:justify-start">
-            <TabsList className="bg-pink-900/50 border border-pink-500/50 w-full md:w-auto">
+            <TabsList className="bg-black/40 border border-pink-500/20 w-full md:w-auto p-1.5">
               <TabsTrigger
                 value="pending"
-                className="data-[state=active]:bg-neon-pink/20 !text-white flex-1 md:flex-initial text-sm md:text-base"
+                className="data-[state=active]:border-neon-pink data-[state=active]:border data-[state=active]:bg-neon-pink/10 data-[state=active]:!text-neon-pink data-[state=active]:neon-text-pink !text-white/60 hover:!text-white/80 transition-all flex-1 md:flex-initial text-sm md:text-base font-semibold px-4 py-3.5 md:px-6 md:py-4"
               >
                 <Clock className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 Pending ({pendingEntries.length})
               </TabsTrigger>
               <TabsTrigger
                 value="history"
-                className="data-[state=active]:bg-neon-pink/20 !text-white flex-1 md:flex-initial text-sm md:text-base"
+                className="data-[state=active]:border-neon-pink data-[state=active]:border data-[state=active]:bg-neon-pink/10 data-[state=active]:!text-neon-pink data-[state=active]:neon-text-pink !text-white/60 hover:!text-white/80 transition-all flex-1 md:flex-initial text-sm md:text-base font-semibold px-4 py-3.5 md:px-6 md:py-4"
               >
                 <Ticket className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 History ({settledEntries.length})
@@ -534,60 +524,36 @@ DashboardProps) {
       {/* Jackpot Modal */}
       <Dialog open={showJackpotModal} onOpenChange={setShowJackpotModal} modal>
         <DialogContent
-          className="bg-black/95 border-4 border-yellow-500 backdrop-blur-xl rounded-3xl max-h-[95vh] overflow-y-auto"
-          style={{
-            maxWidth: "1200px",
-            width: "90vw",
-            boxShadow:
-              "0 0 40px rgba(234, 179, 8, 0.8), 0 0 80px rgba(234, 179, 8, 0.6), 0 0 120px rgba(234, 179, 8, 0.4), 0 0 160px rgba(234, 179, 8, 0.2)",
-          }}
+          className="bg-black/95 border-4 border-yellow-500 backdrop-blur-xl rounded-3xl max-h-[95vh] overflow-y-auto modal-jackpot-size jackpot-box-glow-intense"
           onInteractOutside={(e) => e.preventDefault()}
         >
           <DialogTitle className="sr-only">Jackpot Winner</DialogTitle>
           <DialogDescription className="sr-only">
             Congratulations! You won the jackpot prize.
           </DialogDescription>
-          <div className="text-center py-4 md:py-6 px-3 md:px-8">
+          <div className="text-center py-8 md:py-6 px-4 md:px-8">
             {/* Title with intense glow - Mobile: 2 lines, Desktop: 1 line */}
-            <div className="mb-3 md:mb-4">
+            <div className="mb-6 md:mb-4">
               {/* Mobile version - 2 lines */}
-              <h2
-                className="block md:hidden text-yellow-300 leading-tight"
-                style={{
-                  fontSize: "20px",
-                  textShadow:
-                    "0 0 20px rgba(253, 224, 71, 1), 0 0 40px rgba(253, 224, 71, 0.9), 0 0 60px rgba(253, 224, 71, 0.7), 0 0 80px rgba(253, 224, 71, 0.5)",
-                }}
-              >
+              <h2 className="block md:hidden text-yellow-300 leading-tight text-[36px] jackpot-text-glow-intense">
                 💎 YOU WON 💎
                 <br />
                 THE JACKPOT!
               </h2>
 
               {/* Desktop version - 1 line */}
-              <h2
-                className="hidden md:block text-yellow-300"
-                style={{
-                  fontSize: "64px",
-                  textShadow:
-                    "0 0 20px rgba(253, 224, 71, 1), 0 0 40px rgba(253, 224, 71, 0.9), 0 0 60px rgba(253, 224, 71, 0.7), 0 0 80px rgba(253, 224, 71, 0.5)",
-                }}
-              >
+              <h2 className="hidden md:block text-yellow-300 text-[64px] jackpot-text-glow-intense">
                 💎 YOU WON THE JACKPOT! 💎
               </h2>
             </div>
 
             {/* Jackpot Icons - 2 coins with golden round ID coin in middle */}
-            <div className="flex justify-center items-center gap-1 md:gap-8 mb-3 md:mb-4">
+            <div className="flex justify-center items-center gap-3 md:gap-8 mb-6 md:mb-4">
               {/* All 3 icons visible on all screens */}
               <img
                 src={jackpotGif}
                 alt="Jackpot"
-                className="w-16 h-16 md:w-64 md:h-64 object-contain"
-                style={{
-                  filter:
-                    "drop-shadow(0 0 30px rgba(253, 224, 71, 0.8)) drop-shadow(0 0 60px rgba(253, 224, 71, 0.5))",
-                }}
+                className="w-16 h-16 md:w-32 lg:w-64 md:h-32 lg:h-64 object-contain jackpot-filter-glow"
                 // animate={{
                 //   scale: [1, 1.1, 1],
                 //   rotate: [0, 5, -5, 0],
@@ -600,7 +566,7 @@ DashboardProps) {
               />
 
               {/* Golden Round ID Coin - Always visible */}
-              <div className="flex justify-center items-center w-20 h-20 md:w-64 md:h-64">
+              <div className="flex justify-center items-center w-20 h-20 md:w-40 lg:w-64 md:h-40 lg:h-64">
                 <svg
                   className="w-full h-full"
                   viewBox="0 0 200 200"
@@ -661,11 +627,7 @@ DashboardProps) {
               <img
                 src={jackpotGif}
                 alt="Jackpot"
-                className="w-16 h-16 md:w-64 md:h-64 object-contain"
-                style={{
-                  filter:
-                    "drop-shadow(0 0 30px rgba(253, 224, 71, 0.8)) drop-shadow(0 0 60px rgba(253, 224, 71, 0.5))",
-                }}
+                className="w-16 h-16 md:w-32 lg:w-64 md:h-32 lg:h-64 object-contain jackpot-filter-glow"
                 // animate={{
                 //   scale: [1, 1.1, 1],
                 //   rotate: [0, 5, -5, 0],
@@ -680,13 +642,13 @@ DashboardProps) {
             </div>
 
             {/* "You won" text */}
-            <p className="text-white mb-2 text-2xl md:text-[32px] font-bold">
+            <p className="text-white mb-4 text-4xl md:text-[32px] font-bold">
               You won
             </p>
 
             {/* Prize Amount with EXACT RADIATING GLOW from landing page */}
             <motion.div
-              className="text-5xl md:text-8xl text-yellow-300 neon-text-yellow mb-4 md:mb-6"
+              className="text-7xl md:text-8xl text-yellow-300 neon-text-yellow mb-6 md:mb-6"
               animate={{
                 filter: [
                   "drop-shadow(0 0 10px rgba(253, 224, 71, 0.2)) drop-shadow(0 0 20px rgba(253, 224, 71, 0.2))",
@@ -722,13 +684,7 @@ DashboardProps) {
         modal
       >
         <DialogContent
-          className="bg-black/95 border-4 border-yellow-500 backdrop-blur-xl rounded-3xl"
-          style={{
-            maxWidth: "600px",
-            width: "90vw",
-            boxShadow:
-              "0 0 30px rgba(234, 179, 8, 0.6), 0 0 60px rgba(234, 179, 8, 0.4), 0 0 90px rgba(234, 179, 8, 0.2)",
-          }}
+          className="bg-black/95 border-4 border-yellow-500 backdrop-blur-xl rounded-3xl modal-consolation-size jackpot-box-glow-medium"
           onInteractOutside={(e) => e.preventDefault()}
         >
           <DialogTitle className="sr-only">
@@ -801,13 +757,7 @@ DashboardProps) {
             <p className="text-white mb-4 md:mb-6">Consolation Prize</p>
 
             {/* Prize Amount - GOLDEN with enhanced glow */}
-            <div
-              className="text-yellow-300 mb-4 md:mb-8 text-5xl md:text-6xl"
-              style={{
-                textShadow:
-                  "0 0 20px rgba(234, 179, 8, 1), 0 0 40px rgba(234, 179, 8, 0.8), 0 0 60px rgba(234, 179, 8, 0.6), 0 0 80px rgba(234, 179, 8, 0.4)",
-              }}
-            >
+            <div className="text-yellow-300 mb-4 md:mb-8 text-5xl md:text-6xl jackpot-text-glow-intense">
               {formatNumber(consolationEntry?.prizeAmount || 0)} CSPR
             </div>
 
