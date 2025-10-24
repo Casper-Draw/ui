@@ -25,7 +25,12 @@ interface HeaderProps {
   onConnect: () => void;
 }
 
-export function Header({ currentPage, onNavigate, activeAccount, onConnect }: HeaderProps) {
+export function Header({
+  currentPage,
+  onNavigate,
+  activeAccount,
+  onConnect,
+}: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleNavigate = (page: string) => {
@@ -77,10 +82,18 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
             Dashboard
           </button>
           <Button
-            onClick={(e) => { e.preventDefault(); onConnect(); }}
+            onClick={(e) => {
+              e.preventDefault();
+              onConnect();
+            }}
             className="bg-neon-pink hover:bg-neon-pink/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer text-lg"
           >
-            {activeAccount ? `${activeAccount.public_key.slice(0, 6)}...${activeAccount.public_key.slice(-4)}` : 'Connect'}
+            {activeAccount
+              ? `${activeAccount.public_key.slice(
+                  0,
+                  6
+                )}...${activeAccount.public_key.slice(-4)}`
+              : "Connect"}
           </Button>
         </nav>
 
@@ -139,10 +152,18 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
               Dashboard
             </button>
             <Button
-              onClick={(e) => { e.preventDefault(); onConnect(); }}
+              onClick={(e) => {
+                e.preventDefault();
+                onConnect();
+              }}
               className="bg-neon-pink hover:bg-neon-pink/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer mt-2 text-lg"
             >
-              {activeAccount ? `${activeAccount.public_key.slice(0, 6)}...${activeAccount.public_key.slice(-4)}` : 'Connect'}
+              {activeAccount
+                ? `${activeAccount.public_key.slice(
+                    0,
+                    6
+                  )}...${activeAccount.public_key.slice(-4)}`
+                : "Connect"}
             </Button>
           </nav>
 

@@ -2,9 +2,7 @@ interface CasperDrawIconProps {
   className?: string;
 }
 
-export function CasperDrawIcon({
-  className = "w-6 h-6",
-}: CasperDrawIconProps) {
+export function CasperDrawIcon({ className = "w-6 h-6" }: CasperDrawIconProps) {
   return (
     <svg
       viewBox="0 0 64 64"
@@ -59,40 +57,23 @@ export function CasperDrawIcon({
         />
         {/* Bottom sparkles */}
         <circle cx="18" cy="45" r="1.5" fill="#FFD700" />
-        <circle cx="46" cy="45" r="1.5" fill="#FF00FF" />
+        <circle cx="46" cy="45" r="1.5" fill="#ff0080ff" />
       </g>
 
       {/* Curved arrows indicating randomness/draw */}
-      <g
-        opacity="0.3"
-        stroke="#FF00FF"
-        strokeWidth="1.5"
-        fill="none"
-      >
+      <g opacity="0.3" stroke="#ff0080ff" strokeWidth="1.5" fill="none">
         <path d="M 20 28 Q 24 24 28 28" strokeLinecap="round" />
         <path d="M 36 36 Q 40 40 44 36" strokeLinecap="round" />
       </g>
 
       {/* Gradient definitions */}
       <defs>
-        <linearGradient
-          id="drawGradient"
-          x1="8"
-          y1="14"
-          x2="56"
-          y2="50"
-        >
+        <linearGradient id="drawGradient" x1="8" y1="14" x2="56" y2="50">
           <stop offset="0%" stopColor="#9333EA" />
           <stop offset="50%" stopColor="#DB2777" />
           <stop offset="100%" stopColor="#DC2626" />
         </linearGradient>
-        <linearGradient
-          id="lightningGradient"
-          x1="28"
-          y1="18"
-          x2="34"
-          y2="46"
-        >
+        <linearGradient id="lightningGradient" x1="28" y1="18" x2="34" y2="46">
           <stop offset="0%" stopColor="#FFD700" />
           <stop offset="50%" stopColor="#FBBF24" />
           <stop offset="100%" stopColor="#F59E0B" />

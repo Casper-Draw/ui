@@ -2,9 +2,7 @@ interface StackedTicketsProps {
   className?: string;
 }
 
-export function StackedTickets({
-  className = "h-10",
-}: StackedTicketsProps) {
+export function StackedTickets({ className = "h-10" }: StackedTicketsProps) {
   return (
     <svg
       viewBox="0 0 75 70"
@@ -34,7 +32,7 @@ export function StackedTickets({
           y2="50"
           gradientUnits="userSpaceOnUse"
         >
-          <stop offset="0%" stopColor="#FF00FF" />
+          <stop offset="0%" stopColor="#ff0080ff" />
           <stop offset="100%" stopColor="#DB2777" />
         </linearGradient>
 
@@ -51,34 +49,16 @@ export function StackedTickets({
         </linearGradient>
 
         {/* Glow filters */}
-        <filter
-          id="glow"
-          x="-50%"
-          y="-50%"
-          width="200%"
-          height="200%"
-        >
-          <feGaussianBlur
-            stdDeviation="2"
-            result="coloredBlur"
-          />
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
 
-        <filter
-          id="ticketGlow"
-          x="-50%"
-          y="-50%"
-          width="200%"
-          height="200%"
-        >
-          <feGaussianBlur
-            stdDeviation="2.5"
-            result="coloredBlur"
-          />
+        <filter id="ticketGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
@@ -148,7 +128,7 @@ export function StackedTickets({
             rx="3"
             fill="url(#ticket2Gradient)"
             opacity="0.9"
-            stroke="#FF00FF"
+            stroke="#ff0080ff"
             strokeWidth="2"
           />
           {/* Perforations */}
@@ -168,13 +148,7 @@ export function StackedTickets({
             strokeWidth="1.5"
             opacity="0.7"
           />
-          <circle
-            cx="35"
-            cy="35"
-            r="3"
-            fill="#FFFFFF"
-            opacity="0.9"
-          />
+          <circle cx="35" cy="35" r="3" fill="#FFFFFF" opacity="0.9" />
           <line
             x1="20"
             y1="42"

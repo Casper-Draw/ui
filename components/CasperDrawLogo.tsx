@@ -2,12 +2,10 @@ interface CasperDrawLogoProps {
   className?: string;
 }
 
-export function CasperDrawLogo({
-  className = "h-10",
-}: CasperDrawLogoProps) {
+export function CasperDrawLogo({ className = "h-10" }: CasperDrawLogoProps) {
   return (
     <svg
-      viewBox="0 0 440 70"
+      viewBox="0 0 400 70"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
@@ -78,51 +76,24 @@ export function CasperDrawLogo({
         </linearGradient>
 
         {/* Glow filters */}
-        <filter
-          id="glow"
-          x="-50%"
-          y="-50%"
-          width="200%"
-          height="200%"
-        >
-          <feGaussianBlur
-            stdDeviation="2"
-            result="coloredBlur"
-          />
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
 
-        <filter
-          id="strongGlow"
-          x="-50%"
-          y="-50%"
-          width="200%"
-          height="200%"
-        >
-          <feGaussianBlur
-            stdDeviation="3"
-            result="coloredBlur"
-          />
+        <filter id="strongGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
 
-        <filter
-          id="ticketGlow"
-          x="-50%"
-          y="-50%"
-          width="200%"
-          height="200%"
-        >
-          <feGaussianBlur
-            stdDeviation="2.5"
-            result="coloredBlur"
-          />
+        <filter id="ticketGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
@@ -182,7 +153,7 @@ export function CasperDrawLogo({
           />
         </g>
 
-        {/* Ticket 2 (Middle) - Pink */}
+        {/* Ticket 2 (Middle) - Hot Pink */}
         <g transform="translate(0, 4) rotate(-3, 35, 35)">
           <rect
             x="10"
@@ -192,7 +163,7 @@ export function CasperDrawLogo({
             rx="3"
             fill="url(#ticket2Gradient)"
             opacity="0.9"
-            stroke="#FF00FF"
+            stroke="#ff0080ff"
             strokeWidth="2"
           />
           {/* Perforations */}
@@ -212,13 +183,7 @@ export function CasperDrawLogo({
             strokeWidth="1.5"
             opacity="0.7"
           />
-          <circle
-            cx="35"
-            cy="35"
-            r="3"
-            fill="#FFFFFF"
-            opacity="0.9"
-          />
+          <circle cx="35" cy="35" r="3" fill="#FFFFFF" opacity="0.9" />
           <line
             x1="20"
             y1="42"
@@ -252,7 +217,7 @@ export function CasperDrawLogo({
           {/* Ticket details - dollar sign */}
           <text
             x="35"
-            y="35"
+            y="36"
             fontFamily="Arial"
             fontSize="16"
             fontWeight="900"

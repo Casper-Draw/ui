@@ -468,7 +468,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       <hr className="casino-divider max-w-6xl mx-auto" />
 
       {/* Sponsors Section */}
-      <div className="relative py-10 px-4 overflow-hidden">
+      <div className="relative py-10 px-4 overflow-hidden pb-24">
         {/* Static background sparkles */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Left side - White and Red sparkles */}
@@ -547,9 +547,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 <div className="relative group">
                   {/* Glow effect background */}
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-3xl blur-xl opacity-50"
+                    className="absolute -inset-2 bg-gradient-to-r from-red-600 via-red-500 to-pink-500 rounded-3xl blur-2xl opacity-60"
                     animate={{
-                      opacity: [0.3, 0.6, 0.3],
+                      opacity: [0.4, 0.8, 0.4],
                     }}
                     transition={{
                       duration: 3,
@@ -559,7 +559,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   />
 
                   {/* Card content */}
-                  <div className="relative bg-white/95 backdrop-blur-sm border-4 border-white rounded-3xl p-6 md:p-10 shadow-2xl shadow-white/50 transition-all duration-300 group-hover:shadow-white/70 cursor-pointer">
+                  <div className="relative bg-white/95 backdrop-blur-sm border-4 border-white rounded-3xl p-6 md:p-10 shadow-[0_0_60px_rgba(255,255,255,0.6),_0_0_100px_rgba(255,0,100,0.4)] transition-all duration-300 group-hover:shadow-[0_0_80px_rgba(255,255,255,0.8),_0_0_120px_rgba(255,0,100,0.6)] cursor-pointer">
                     <div>
                       <img
                         src={casperLogo}
@@ -593,9 +593,9 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                 <div className="relative group">
                   {/* Glow effect background */}
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-orange-500 via-orange-600 to-rose-800 rounded-3xl blur-xl opacity-50"
+                    className="absolute -inset-2 bg-gradient-to-r from-orange-500 via-orange-600 to-rose-800 rounded-3xl blur-2xl opacity-60"
                     animate={{
-                      opacity: [0.3, 0.6, 0.3],
+                      opacity: [0.4, 0.8, 0.4],
                     }}
                     transition={{
                       duration: 3,
@@ -606,7 +606,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
                   />
 
                   {/* Card content */}
-                  <div className="relative bg-[#102937] backdrop-blur-sm border-4 border-orange-500 rounded-3xl p-6 md:p-10 shadow-2xl shadow-orange-500/50 transition-all duration-300 group-hover:border-orange-400 group-hover:shadow-orange-400/70 cursor-pointer">
+                  <div className="relative bg-[#102937] backdrop-blur-sm border-4 border-orange-500 rounded-3xl p-6 md:p-10 shadow-[0_0_60px_rgba(249,115,22,0.5),_0_0_100px_rgba(249,115,22,0.3)] transition-all duration-300 group-hover:border-orange-400 group-hover:shadow-[0_0_80px_rgba(249,115,22,0.7),_0_0_120px_rgba(249,115,22,0.5)] cursor-pointer">
                     <div>
                       <img
                         src={autonomLogo}
