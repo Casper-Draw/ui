@@ -34,8 +34,8 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
   };
 
   return (
-    <header className="bg-[#101010]/98 backdrop-blur-xl border-b-2 border-[#E91E63]/50 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-2.5 md:px-0 py-2.5 md:py-5 flex items-center justify-between">
+    <header className="bg-[#101010]/98 backdrop-blur-xl border-b-2 border-neon-pink/50 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-2.5 md:py-5 flex items-center justify-between">
         <motion.div
           className="cursor-pointer group"
           onClick={() => handleNavigate("landing")}
@@ -50,10 +50,9 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
             onClick={() => onNavigate("landing")}
             className={
               currentPage === "landing"
-                ? "text-[#E91E63] opacity-100 px-4 py-2 transition-all cursor-pointer"
-                : "text-[#E91E63]/60 opacity-60 hover:opacity-80 px-4 py-2 transition-all cursor-pointer"
+                ? "text-neon-pink opacity-100 px-4 py-2 transition-all cursor-pointer text-xl font-semibold"
+                : "text-neon-pink/60 opacity-60 hover:opacity-80 px-4 py-2 transition-all cursor-pointer text-xl font-semibold"
             }
-            style={{ fontSize: "1.25rem", fontWeight: 600 }}
           >
             Home
           </button>
@@ -61,10 +60,9 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
             onClick={() => onNavigate("enter")}
             className={
               currentPage === "enter"
-                ? "text-[#E91E63] opacity-100 px-4 py-2 transition-all cursor-pointer"
-                : "text-[#E91E63]/60 opacity-60 hover:opacity-80 px-4 py-2 transition-all cursor-pointer"
+                ? "text-neon-pink opacity-100 px-4 py-2 transition-all cursor-pointer text-xl font-semibold"
+                : "text-neon-pink/60 opacity-60 hover:opacity-80 px-4 py-2 transition-all cursor-pointer text-xl font-semibold"
             }
-            style={{ fontSize: "1.25rem", fontWeight: 600 }}
           >
             Play
           </button>
@@ -72,19 +70,15 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
             onClick={() => onNavigate("dashboard")}
             className={
               currentPage === "dashboard"
-                ? "text-[#E91E63] opacity-100 px-4 py-2 transition-all cursor-pointer"
-                : "text-[#E91E63]/60 opacity-60 hover:opacity-80 px-4 py-2 transition-all cursor-pointer"
+                ? "text-neon-pink opacity-100 px-4 py-2 transition-all cursor-pointer text-xl font-semibold"
+                : "text-neon-pink/60 opacity-60 hover:opacity-80 px-4 py-2 transition-all cursor-pointer text-xl font-semibold"
             }
-            style={{ fontSize: "1.25rem", fontWeight: 600 }}
           >
             Dashboard
           </button>
           <Button
             onClick={(e) => { e.preventDefault(); onConnect(); }}
-            className="bg-[#E91E63] hover:bg-[#E91E63]/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer"
-            style={{
-              fontSize: "1.125rem",
-            }}
+            className="bg-neon-pink hover:bg-neon-pink/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer text-lg"
           >
             {activeAccount ? `${activeAccount.public_key.slice(0, 6)}...${activeAccount.public_key.slice(-4)}` : 'Connect'}
           </Button>
@@ -102,13 +96,10 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent
           side="right"
-          className="w-[280px] bg-[#101010]/95 backdrop-blur-xl border-l-2 border-[#E91E63]/50 p-0 flex flex-col"
+          className="w-[280px] bg-[#101010]/95 backdrop-blur-xl border-l-2 border-neon-pink/50 p-0 flex flex-col"
         >
           <SheetHeader className="px-6 pt-8 pb-4">
-            <SheetTitle
-              className="text-white text-left"
-              style={{ fontSize: "1.5rem", fontWeight: 600 }}
-            >
+            <SheetTitle className="text-white text-left text-2xl font-semibold">
               Menu
             </SheetTitle>
             <SheetDescription className="sr-only">
@@ -121,13 +112,9 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
               onClick={() => handleNavigate("landing")}
               className={
                 currentPage === "landing"
-                  ? "text-[#E91E63] opacity-100 px-4 py-3 transition-all cursor-pointer text-left"
-                  : "text-[#E91E63]/60 opacity-60 hover:opacity-80 px-4 py-3 transition-all cursor-pointer text-left"
+                  ? "text-neon-pink opacity-100 px-4 py-3 transition-all cursor-pointer text-left text-lg font-semibold"
+                  : "text-neon-pink/60 opacity-60 hover:opacity-80 px-4 py-3 transition-all cursor-pointer text-left text-lg font-semibold"
               }
-              style={{
-                fontSize: "1.125rem",
-                fontWeight: 600,
-              }}
             >
               Home
             </button>
@@ -135,13 +122,9 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
               onClick={() => handleNavigate("enter")}
               className={
                 currentPage === "enter"
-                  ? "text-[#E91E63] opacity-100 px-4 py-3 transition-all cursor-pointer text-left"
-                  : "text-[#E91E63]/60 opacity-60 hover:opacity-80 px-4 py-3 transition-all cursor-pointer text-left"
+                  ? "text-neon-pink opacity-100 px-4 py-3 transition-all cursor-pointer text-left text-lg font-semibold"
+                  : "text-neon-pink/60 opacity-60 hover:opacity-80 px-4 py-3 transition-all cursor-pointer text-left text-lg font-semibold"
               }
-              style={{
-                fontSize: "1.125rem",
-                fontWeight: 600,
-              }}
             >
               Play
             </button>
@@ -149,22 +132,15 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
               onClick={() => handleNavigate("dashboard")}
               className={
                 currentPage === "dashboard"
-                  ? "text-[#E91E63] opacity-100 px-4 py-3 transition-all cursor-pointer text-left"
-                  : "text-[#E91E63]/60 opacity-60 hover:opacity-80 px-4 py-3 transition-all cursor-pointer text-left"
+                  ? "text-neon-pink opacity-100 px-4 py-3 transition-all cursor-pointer text-left text-lg font-semibold"
+                  : "text-neon-pink/60 opacity-60 hover:opacity-80 px-4 py-3 transition-all cursor-pointer text-left text-lg font-semibold"
               }
-              style={{
-                fontSize: "1.125rem",
-                fontWeight: 600,
-              }}
             >
               Dashboard
             </button>
             <Button
               onClick={(e) => { e.preventDefault(); onConnect(); }}
-              className="bg-[#E91E63] hover:bg-[#E91E63]/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer mt-2"
-              style={{
-                fontSize: "1.125rem",
-              }}
+              className="bg-neon-pink hover:bg-neon-pink/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer mt-2 text-lg"
             >
               {activeAccount ? `${activeAccount.public_key.slice(0, 6)}...${activeAccount.public_key.slice(-4)}` : 'Connect'}
             </Button>

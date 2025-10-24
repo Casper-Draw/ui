@@ -140,6 +140,11 @@
     @apply bg-background text-foreground;
     background: #101010;
     min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  html {
+    overflow-x: hidden;
   }
 
   /* Headings and Important Text use Poppins */
@@ -258,6 +263,17 @@
     box-shadow: 0 0 20px rgba(34, 197, 94, 0.5), 0 0 40px rgba(34, 197, 94, 0.3);
   }
 
+  /* Strong legibility shadows for text on bright backgrounds */
+  .text-shadow-strong {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 1px 4px rgba(0, 0, 0, 0.9);
+  }
+
+  /* Strong legibility shadows for icons/SVGs */
+  .icon-shadow-strong {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8))
+      drop-shadow(0 1px 4px rgba(0, 0, 0, 0.9));
+  }
+
   /* Glowing HR Divider */
   .casino-divider {
     height: 2px;
@@ -332,4 +348,48 @@
 
 html {
   font-size: var(--font-size);
+}
+
+/* Toast/Sonner Styling */
+[data-sonner-toast] {
+  padding: 1.25rem !important;
+  min-height: 4rem !important;
+  min-width: 400px !important;
+  max-width: 500px !important;
+  font-size: 1rem !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+}
+
+@media (max-width: 640px) {
+  [data-sonner-toast] {
+    min-width: 320px !important;
+    max-width: 90vw !important;
+  }
+}
+
+[data-sonner-toast] [data-icon] {
+  align-self: center !important;
+  flex-shrink: 0 !important;
+}
+
+[data-sonner-toast] [data-content] {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+}
+
+[data-sonner-toast] [data-title] {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+}
+
+[data-sonner-toast] [data-description] {
+  color: #ffffff !important;
+  font-size: 0.95rem !important;
+  line-height: 1.5 !important;
+  margin-top: 0.25rem !important;
+  opacity: 1 !important;
 }

@@ -12,6 +12,9 @@ const config: Config = {
         poppins: ["var(--font-poppins)", "sans-serif"],
       },
       colors: {
+        'neon-pink': '#E91E63',
+        'neon-cyan': '#00ffff',
+        'neon-yellow': '#fbbf24',
         border: "var(--color-border)",
         input: "var(--color-input)",
         ring: "var(--color-ring)",

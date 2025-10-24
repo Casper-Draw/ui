@@ -108,7 +108,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="relative min-h-[880px] overflow-hidden pb-8 md:pb-12">
+      <div className="relative min-h-[880px] overflow-hidden pb-2 md:pb-12">
         {/* Animated background effects */}
         <div className="absolute inset-0 overflow-hidden">
           {Array.from({ length: 10 }).map((_, i) => (
@@ -116,121 +116,169 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           ))}
         </div>
 
-        <div className="relative flex justify-center px-4 pt-16 md:pt-32">
+        <div className="relative flex justify-center px-4 pt-20 md:pt-32">
           <div className="max-w-5xl mx-auto text-center text-white">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
             >
-              <div className="mb-8">
-                <div className="inline-flex items-center justify-center mb-4 md:mb-6 px-4">
-                  <CasperDrawLogo className="h-16 md:h-32 lg:h-40 w-auto max-w-full" />
+              <div className="mb-8 md:mb-10">
+                {/* Logo - More breathing room on mobile */}
+                <div className="inline-flex items-center justify-center mb-5 md:mb-6 px-4">
+                  <CasperDrawLogo className="h-14 md:h-24 lg:h-32 xl:h-40 w-auto max-w-full" />
                 </div>
-                <div className="flex items-center justify-center gap-2 md:gap-3 mb-4 md:mb-6 px-6">
-                  {/* <Sparkles className="w-6 h-6 text-pink-400" /> */}
-                  <p className="text-[36px] md:text-[40px] lg:text-[48px] font-bold text-white text-center leading-tight break-words max-w-full">
+
+                {/* Main Headline - Optimized mobile sizing */}
+                <div className="flex items-center justify-center gap-2 md:gap-3 mb-4 md:mb-6 px-4">
+                  <p className="text-[26px] md:text-[34px] lg:text-[40px] xl:text-[48px] font-bold text-white text-center leading-tight break-words max-w-full">
                     Instant Wins. Autonom RNG. Casper Network.
                   </p>
-                  {/* <Sparkles className="w-6 h-6 text-pink-400" /> */}
                 </div>
-                <p className="text-[23px] md:text-[28px] lg:text-[32px] font-semibold text-gray-300 max-w-4xl mx-auto px-6 text-center leading-snug break-words">
+
+                {/* Subheadline - Better mobile sizing with better line height */}
+                <p className="text-[17px] md:text-[28px] lg:text-[32px] font-semibold text-gray-300 max-w-4xl mx-auto px-4 text-center leading-relaxed md:leading-snug break-words">
                   Experience true randomness with Autonom RNG. Buy a ticket,
                   settle instantly, and have a chance at winning big!
                 </p>
               </div>
 
-              <div className="flex justify-center mb-12 md:mb-12">
+              {/* CTA Button - More prominent on mobile */}
+              <div className="flex justify-center mb-16 md:mb-12">
                 <Button
                   size="lg"
-                  className="casino-gradient text-sm md:text-xl py-3 md:py-6 px-5 md:px-8 neon-glow-pink hover:scale-105 transition-transform cursor-pointer text-white rounded-xl"
+                  className="casino-gradient text-base md:text-xl py-4 md:py-6 px-6 md:px-8 neon-glow-pink hover:scale-105 transition-transform cursor-pointer text-white rounded-xl text-shadow-strong"
                   onClick={() => onNavigate("enter")}
-                  style={{
-                    textShadow:
-                      "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.9)",
-                  }}
                 >
-                  <Sparkles
-                    className="w-4 h-4 md:w-5 md:h-5 mr-2"
-                    style={{
-                      filter:
-                        "drop-shadow(0 2px 8px rgba(0,0,0,0.8)) drop-shadow(0 1px 4px rgba(0,0,0,0.9))",
-                    }}
-                  />
+                  <Sparkles className="w-4 h-4 md:w-5 md:h-5 mr-2 icon-shadow-strong" />
                   Try Your Luck!
-                  <Sparkles
-                    className="w-4 h-4 md:w-5 md:h-5 ml-2"
-                    style={{
-                      filter:
-                        "drop-shadow(0 2px 8px rgba(0,0,0,0.8)) drop-shadow(0 1px 4px rgba(0,0,0,0.9))",
-                    }}
-                  />
+                  <Sparkles className="w-4 h-4 md:w-5 md:h-5 ml-2 icon-shadow-strong" />
                 </Button>
               </div>
 
-              <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-4 md:gap-8 max-w-5xl mx-auto px-4">
-                <motion.div className="md:hidden w-1/2 h-px bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 mx-auto shrink-0" />
-                <motion.div className="hidden md:block h-12 md:h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500 shrink-0" />
+              {/* Stats Section - Cleaner mobile 2x2 grid */}
+              <div className="max-w-5xl mx-auto px-4">
+                {/* Mobile/Tablet: 2x2 Grid with center +, Desktop: Row with dividers */}
+                <div className="lg:flex lg:flex-row lg:items-center lg:justify-center lg:gap-8">
+                  {/* Mobile/Tablet Grid Container */}
+                  <div className="lg:hidden grid grid-cols-[1fr_auto_1fr] grid-rows-[auto_auto_auto] gap-4 items-center">
+                    {/* Row 1: Stat 1 | Stat 2 */}
+                    <motion.div
+                      className="text-center"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <div className="text-3xl text-pink-400 neon-text-pink mb-1.5">
+                        {formatNumber(20000000)}+
+                      </div>
+                      <div className="text-sm text-white/90 leading-tight">
+                        Total CSPR Won
+                      </div>
+                    </motion.div>
 
-                <motion.div
-                  className="text-center px-2 md:px-6"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <div className="text-2xl md:text-4xl text-pink-400 neon-text-pink mb-1 md:mb-2">
-                    {formatNumber(20000000)}+
-                  </div>
-                  <div className="text-sm md:text-base text-white/90 leading-tight">
-                    Total CSPR Won
-                  </div>
-                </motion.div>
+                    {/* Vertical divider */}
+                    <div className="h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500"></div>
 
-                <motion.div className="md:hidden w-1/2 h-px bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 mx-auto shrink-0" />
-                <motion.div className="hidden md:block h-12 md:h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500 shrink-0" />
+                    <motion.div
+                      className="text-center"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <div className="text-3xl text-pink-400 neon-text-pink mb-1.5">
+                        {formatNumber(20000)}+
+                      </div>
+                      <div className="text-sm text-white/90 leading-tight">
+                        Total Draws
+                      </div>
+                    </motion.div>
 
-                <motion.div
-                  className="text-center px-2 md:px-6"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <div className="text-2xl md:text-4xl text-pink-400 neon-text-pink mb-1 md:mb-2">
-                    {formatNumber(20000)}+
-                  </div>
-                  <div className="text-sm md:text-base text-white/90 leading-tight">
-                    Total Draws
-                  </div>
-                </motion.div>
+                    {/* Row 2: Horizontal divider across all 3 columns */}
+                    <div className="h-px bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500"></div>
+                    <div className="w-px h-px"></div>
+                    <div className="h-px bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500"></div>
 
-                <motion.div className="md:hidden w-1/2 h-px bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 mx-auto shrink-0" />
-                <motion.div className="hidden md:block h-12 md:h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500 shrink-0" />
+                    {/* Row 3: Stat 3 | Stat 4 */}
+                    <motion.div
+                      className="text-center"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <div className="text-3xl text-pink-400 neon-text-pink mb-1.5">
+                        {formatNumber(12394)}
+                      </div>
+                      <div className="text-sm text-white/90 leading-tight">
+                        Users
+                      </div>
+                    </motion.div>
 
-                <motion.div
-                  className="text-center px-2 md:px-6"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <div className="text-2xl md:text-4xl text-pink-400 neon-text-pink mb-1 md:mb-2">
-                    {formatNumber(12394)}
-                  </div>
-                  <div className="text-sm md:text-base text-white/90 leading-tight">
-                    Users
-                  </div>
-                </motion.div>
+                    {/* Vertical divider */}
+                    <div className="h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500"></div>
 
-                <motion.div className="md:hidden w-1/2 h-px bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 mx-auto shrink-0" />
-                <motion.div className="hidden md:block h-12 md:h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500 shrink-0" />
-
-                <motion.div
-                  className="text-center px-2 md:px-6"
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <div className="text-2xl md:text-4xl text-pink-400 neon-text-pink mb-1 md:mb-2">
-                    &lt; 1m
+                    <motion.div
+                      className="text-center"
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      <div className="text-3xl text-pink-400 neon-text-pink mb-1.5">
+                        &lt; 1m
+                      </div>
+                      <div className="text-sm text-white/90 leading-tight">
+                        Settlement Time
+                      </div>
+                    </motion.div>
                   </div>
-                  <div className="text-sm md:text-base text-white/90 leading-tight">
-                    Settlement Time
-                  </div>
-                </motion.div>
 
-                <motion.div className="md:hidden w-1/2 h-px bg-gradient-to-r from-pink-500 via-yellow-400 to-cyan-500 mx-auto shrink-0" />
-                <motion.div className="hidden md:block h-12 md:h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500 shrink-0" />
+                  {/* Desktop: Horizontal Row */}
+                  <motion.div
+                    className="hidden lg:block text-center px-6"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="text-4xl text-pink-400 neon-text-pink mb-2">
+                      {formatNumber(20000000)}+
+                    </div>
+                    <div className="text-base text-white/90 leading-tight">
+                      Total CSPR Won
+                    </div>
+                  </motion.div>
+
+                  <motion.div className="hidden lg:block h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500 shrink-0" />
+
+                  <motion.div
+                    className="hidden lg:block text-center px-6"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="text-4xl text-pink-400 neon-text-pink mb-2">
+                      {formatNumber(20000)}+
+                    </div>
+                    <div className="text-base text-white/90 leading-tight">
+                      Total Draws
+                    </div>
+                  </motion.div>
+
+                  <motion.div className="hidden lg:block h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500 shrink-0" />
+
+                  <motion.div
+                    className="hidden lg:block text-center px-6"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="text-4xl text-pink-400 neon-text-pink mb-2">
+                      {formatNumber(12394)}
+                    </div>
+                    <div className="text-base text-white/90 leading-tight">
+                      Users
+                    </div>
+                  </motion.div>
+
+                  <motion.div className="hidden lg:block h-16 w-px bg-gradient-to-b from-pink-500 via-yellow-400 to-cyan-500 shrink-0" />
+
+                  <motion.div
+                    className="hidden lg:block text-center px-6"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="text-4xl text-pink-400 neon-text-pink mb-2">
+                      &lt; 1m
+                    </div>
+                    <div className="text-base text-white/90 leading-tight">
+                      Settlement Time
+                    </div>
+                  </motion.div>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -238,7 +286,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
       </div>
 
       {/* Current Jackpot Section */}
-      <div className="pt-1.5 md:pt-[2.5px] pb-12 px-4">
+      <div className="-mt-24 md:mt-0 md:pt-[2.5px] pb-12 px-4">
         <div className="max-w-5xl mx-auto text-center">
           <div>
             <div className="flex items-center justify-center gap-3 md:gap-4 mb-6 md:mb-8 px-4">
@@ -265,10 +313,10 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
               }}
             >
               <div className="flex flex-col md:flex-row md:items-center md:justify-center md:gap-6 leading-none">
-                <div className="text-[78px] md:text-[182px] lg:text-[234px] mb-2 md:mb-0">
+                <div className="text-[96px] md:text-[120px] lg:text-[182px] xl:text-[234px] mb-2 md:mb-0">
                   {formatNumber(125000)}
                 </div>
-                <div className="text-[47px] md:text-[182px] lg:text-[234px]">
+                <div className="text-[96px] md:text-[120px] lg:text-[182px] xl:text-[234px]">
                   CSPR
                 </div>
               </div>
@@ -489,9 +537,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
           <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
             {/* Casper Network Card */}
-            <motion.div
-              whileHover={{ y: -10 }}
-            >
+            <motion.div whileHover={{ y: -10 }}>
               <a
                 href="https://www.casper.network/"
                 target="_blank"
@@ -537,9 +583,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             </motion.div>
 
             {/* Autonom Card */}
-            <motion.div
-              whileHover={{ y: -10 }}
-            >
+            <motion.div whileHover={{ y: -10 }}>
               <a
                 href="https://autonom.cc/"
                 target="_blank"

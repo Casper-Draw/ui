@@ -108,7 +108,7 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="neon-text-pink text-[#E91E63] mb-4 text-4xl md:text-[40px]">
+          <h1 className="neon-text-pink text-neon-pink mb-4 text-4xl md:text-[40px]">
             Let&apos;s Play!
           </h1>
           <p className="text-white text-lg md:text-2xl mb-2">
@@ -125,9 +125,9 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
             <Card className="bg-black/40 border-2 border-pink-500/50 neon-glow-pink h-full flex flex-col">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-[#E91E63]" />
+                  <Sparkles className="w-5 h-5 text-neon-pink" />
                   Buy Your Draw Ticket
-                  <Sparkles className="w-5 h-5 text-[#E91E63]" />
+                  <Sparkles className="w-5 h-5 text-neon-pink" />
                 </CardTitle>
                 <CardDescription className="text-gray-400">
                   Get your ticket in the Casper Draw and let Autonom RNG decide
@@ -143,7 +143,7 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                   </h3>
                   <div className="space-y-2 md:space-y-3">
                     <div className="flex items-start gap-2 md:gap-3">
-                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#E91E63] flex items-center justify-center flex-shrink-0 text-sm md:text-lg">
+                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-neon-pink flex items-center justify-center flex-shrink-0 text-sm md:text-lg">
                         1
                       </div>
                       <div>
@@ -157,7 +157,7 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                       </div>
                     </div>
                     <div className="flex items-start gap-2 md:gap-3">
-                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#E91E63] flex items-center justify-center flex-shrink-0 text-sm md:text-lg">
+                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-neon-pink flex items-center justify-center flex-shrink-0 text-sm md:text-lg">
                         2
                       </div>
                       <div>
@@ -170,7 +170,7 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                       </div>
                     </div>
                     <div className="flex items-start gap-2 md:gap-3">
-                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-[#E91E63] flex items-center justify-center flex-shrink-0 text-sm md:text-lg">
+                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-neon-pink flex items-center justify-center flex-shrink-0 text-sm md:text-lg">
                         3
                       </div>
                       <div>
@@ -186,9 +186,9 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                 </div>
 
                 {/* Win Probabilities */}
-                <div className="bg-black/30 rounded-xl p-4 md:p-6 border border-[#E91E63]/30">
+                <div className="bg-black/30 rounded-xl p-4 md:p-6 border border-neon-pink/30">
                   <h3 className="text-white text-base md:text-lg mb-3 md:mb-4 flex items-center gap-2">
-                    <Trophy className="w-4 h-4 md:w-5 md:h-5 text-[#E91E63]" />
+                    <Trophy className="w-4 h-4 md:w-5 md:h-5 text-neon-pink" />
                     Win Probabilities
                   </h3>
                   <div className="space-y-2 md:space-y-3">
@@ -233,30 +233,16 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                 {!activeAccount ? (
                   <Button
                     onClick={onConnect}
-                    className="w-full casino-gradient neon-glow-pink hover:scale-105 transition-transform h-14 cursor-pointer text-white rounded-xl"
-                    style={{
-                      textShadow:
-                        "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.9)",
-                    }}
+                    className="w-full casino-gradient neon-glow-pink hover:scale-105 transition-transform h-14 cursor-pointer text-white rounded-xl text-shadow-strong"
                   >
-                    <Wallet
-                      className="w-5 h-5 mr-2"
-                      style={{
-                        filter:
-                          "drop-shadow(0 2px 8px rgba(0,0,0,0.8)) drop-shadow(0 1px 4px rgba(0,0,0,0.9))",
-                      }}
-                    />
+                    <Wallet className="w-5 h-5 mr-2 icon-shadow-strong" />
                     Connect Casper Wallet
                   </Button>
                 ) : (
                   <Button
                     onClick={handleBuyTicket}
                     disabled={isProcessing}
-                    className="w-full casino-gradient neon-glow-yellow hover:scale-105 transition-transform h-14 cursor-pointer text-white rounded-xl"
-                    style={{
-                      textShadow:
-                        "0 2px 8px rgba(0,0,0,0.8), 0 1px 4px rgba(0,0,0,0.9)",
-                    }}
+                    className="w-full casino-gradient neon-glow-yellow hover:scale-105 transition-transform h-14 cursor-pointer text-white rounded-xl text-shadow-strong"
                   >
                     {isProcessing ? (
                       <>
@@ -268,33 +254,15 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                             ease: "linear",
                           }}
                         >
-                          <Zap
-                            className="w-5 h-5 mr-2"
-                            style={{
-                              filter:
-                                "drop-shadow(0 2px 8px rgba(0,0,0,0.8)) drop-shadow(0 1px 4px rgba(0,0,0,0.9))",
-                            }}
-                          />
+                          <Zap className="w-5 h-5 mr-2 icon-shadow-strong" />
                         </motion.div>
                         Processing...
                       </>
                     ) : (
                       <>
-                        <Ticket
-                          className="w-5 h-5 mr-2"
-                          style={{
-                            filter:
-                              "drop-shadow(0 2px 8px rgba(0,0,0,0.8)) drop-shadow(0 1px 4px rgba(0,0,0,0.9))",
-                          }}
-                        />
+                        <Ticket className="w-5 h-5 mr-2 icon-shadow-strong" />
                         Buy Ticket for {formatNumber(ticketPrice)} CSPR
-                        <ArrowRight
-                          className="w-5 h-5 ml-2"
-                          style={{
-                            filter:
-                              "drop-shadow(0 2px 8px rgba(0,0,0,0.8)) drop-shadow(0 1px 4px rgba(0,0,0,0.9))",
-                          }}
-                        />
+                        <ArrowRight className="w-5 h-5 ml-2 icon-shadow-strong" />
                       </>
                     )}
                   </Button>

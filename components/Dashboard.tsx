@@ -235,15 +235,15 @@ DashboardProps) {
             transition={{ delay: 0.3 }}
             className="h-full"
           >
-            <Card className="bg-black/40 border-2 border-[#E91E63]/50 neon-glow-pink h-full flex flex-col">
+            <Card className="bg-black/40 border-2 border-neon-pink/50 neon-glow-pink h-full flex flex-col">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base md:text-lg text-white">
                   Total Spent (CSPR)
                 </CardTitle>
-                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-[#E91E63]" />
+                <DollarSign className="w-5 h-5 md:w-6 md:h-6 text-neon-pink" />
               </CardHeader>
               <CardContent className="flex-1 flex flex-col justify-between">
-                <div className="text-4xl md:text-6xl text-[#E91E63] neon-text-pink whitespace-nowrap">
+                <div className="text-4xl md:text-6xl text-neon-pink neon-text-pink whitespace-nowrap">
                   {formatNumber(totalSpent)}
                 </div>
                 <p className="text-sm md:text-base text-white mt-1">
@@ -302,14 +302,14 @@ DashboardProps) {
             <TabsList className="bg-pink-900/50 border border-pink-500/50 w-full md:w-auto">
               <TabsTrigger
                 value="pending"
-                className="data-[state=active]:bg-[#E91E63]/20 !text-white flex-1 md:flex-initial text-sm md:text-base"
+                className="data-[state=active]:bg-neon-pink/20 !text-white flex-1 md:flex-initial text-sm md:text-base"
               >
                 <Clock className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 Pending ({pendingEntries.length})
               </TabsTrigger>
               <TabsTrigger
                 value="history"
-                className="data-[state=active]:bg-[#E91E63]/20 !text-white flex-1 md:flex-initial text-sm md:text-base"
+                className="data-[state=active]:bg-neon-pink/20 !text-white flex-1 md:flex-initial text-sm md:text-base"
               >
                 <Ticket className="w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2" />
                 History ({settledEntries.length})
@@ -393,7 +393,7 @@ DashboardProps) {
                           <Button
                             onClick={() => handleSettle(entry)}
                             disabled={settlingRequests.has(entry.requestId)}
-                            className="bg-[#E91E63] hover:bg-[#E91E63]/90 text-white hover:scale-105 transition-transform cursor-pointer w-full md:w-auto text-base md:text-lg whitespace-nowrap"
+                            className="bg-neon-pink hover:bg-neon-pink/90 text-white hover:scale-105 transition-transform cursor-pointer w-full md:w-auto text-base md:text-lg whitespace-nowrap"
                           >
                             {settlingRequests.has(entry.requestId) ? (
                               <>
@@ -427,7 +427,7 @@ DashboardProps) {
             <Card className="bg-black/40 border-2 border-pink-500/50">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
-                  <Ticket className="w-5 h-5 text-[#E91E63]" />
+                  <Ticket className="w-5 h-5 text-neon-pink" />
                   Ticket History
                 </CardTitle>
                 <CardDescription className="text-gray-400">
@@ -707,7 +707,7 @@ DashboardProps) {
             {/* Claim Prize Button */}
             <Button
               onClick={() => setShowJackpotModal(false)}
-              className="bg-gradient-to-r from-[#E91E63] to-pink-600 hover:opacity-90 text-white px-6 md:px-8 py-4 md:py-6 cursor-pointer w-full md:w-auto"
+              className="bg-gradient-to-r from-neon-pink to-pink-600 hover:opacity-90 text-white px-6 md:px-8 py-4 md:py-6 cursor-pointer w-full md:w-auto"
             >
               Claim Prize
             </Button>
@@ -819,7 +819,7 @@ DashboardProps) {
             {/* Button */}
             <Button
               onClick={() => setShowConsolationModal(false)}
-              className="bg-gradient-to-r from-[#E91E63] to-pink-600 hover:opacity-90 text-white px-6 md:px-8 py-4 md:py-6 cursor-pointer w-full md:w-auto"
+              className="bg-gradient-to-r from-neon-pink to-pink-600 hover:opacity-90 text-white px-6 md:px-8 py-4 md:py-6 cursor-pointer w-full md:w-auto"
             >
               Claim Prize
             </Button>
