@@ -162,31 +162,18 @@ export default function AppContainer() {
   // Set up wallet event listeners
   useEffect(() => {
     const inst = (clickRef ?? (typeof window !== 'undefined' ? window.csprclick : undefined)) as
-      | {
-          on: (
-            event: string,
-            cb: (evt?: { account: CasperAccount } | unknown) => void
-          ) => void;
-        }
+      | { on: (event: string, cb: (evt?: { account: CasperAccount } | unknown) => void) => void }
       | undefined;
-    inst?.on('csprclick:signed_in', async (evt: unknown) => {
+    inst?.on('csprclick:signed_in', (evt: unknown) => {
       const e = evt as { account: CasperAccount };
-      console.log('[CSPR.click] signed_in', e);
       setActiveAccount(e.account);
     });
-    inst?.on('csprclick:switched_account', async (evt: unknown) => {
+    inst?.on('csprclick:switched_account', (evt: unknown) => {
       const e = evt as { account: CasperAccount };
-      console.log('[CSPR.click] switched_account', e);
       setActiveAccount(e.account);
     });
-    inst?.on('csprclick:signed_out', async () => {
-      console.log('[CSPR.click] signed_out');
-      setActiveAccount(null);
-    });
-    inst?.on('csprclick:disconnected', async () => {
-      console.log('[CSPR.click] disconnected');
-      setActiveAccount(null);
-    });
+    inst?.on('csprclick:signed_out', () => setActiveAccount(null));
+    inst?.on('csprclick:disconnected', () => setActiveAccount(null));
   }, [clickRef]);
 
   const handleEntrySubmit = (entry: LotteryEntry) => {
@@ -217,32 +204,17 @@ export default function AppContainer() {
   };
 
   const handleConnectWallet = () => {
-    try {
-      console.log('handleConnectWallet called');
-      const hasWindow = typeof window !== 'undefined';
-      console.log('window.csprclick:', hasWindow ? window.csprclick : 'window undefined');
-      console.log('clickRef:', clickRef);
-
-      const inst = (hasWindow ? window.csprclick : undefined) || (clickRef as unknown as CsprClick | undefined);
-      if (inst && typeof inst.signIn === 'function') {
-        console.log('Calling csprclick.signIn()');
-        inst.signIn();
-        return;
-      }
-
-      // If SDK is still initializing, retry once on next tick
-      setTimeout(() => {
-        const inst2 = (hasWindow ? window.csprclick : undefined) || (clickRef as unknown as CsprClick | undefined);
-        if (inst2 && typeof inst2.signIn === 'function') {
-          console.log('Retrying csprclick.signIn() after init');
-          inst2.signIn();
-        } else {
-          console.error('CSPR.click SDK not available yet.');
-        }
-      }, 0);
-    } catch (err) {
-      console.error('Error during connect flow:', err);
+    const inst = (typeof window !== 'undefined' ? window.csprclick : undefined) ||
+      (clickRef as unknown as CsprClick | undefined);
+    if (inst && typeof inst.signIn === 'function') {
+      inst.signIn();
+      return;
     }
+    setTimeout(() => {
+      const i2 = (typeof window !== 'undefined' ? window.csprclick : undefined) ||
+        (clickRef as unknown as CsprClick | undefined);
+      if (i2 && typeof i2.signIn === 'function') i2.signIn();
+    }, 0);
   };
 
   return (

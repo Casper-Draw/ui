@@ -421,109 +421,75 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
       {/* Sponsors Section */}
       <div className="relative py-10 px-4 overflow-hidden">
-        {/* Animated background effects */}
+        {/* Static background sparkles */}
         <div className="absolute inset-0 pointer-events-none">
+          {/* Left side - White and Red sparkles */}
           {[
-            { startX: 10, startY: 20, endX: 15, endY: 80 },
-            { startX: 25, startY: 10, endX: 30, endY: 90 },
-            { startX: 40, startY: 30, endX: 45, endY: 70 },
-            { startX: 55, startY: 15, endX: 60, endY: 85 },
-            { startX: 70, startY: 25, endX: 75, endY: 75 },
-            { startX: 85, startY: 35, endX: 90, endY: 65 },
-            { startX: 5, startY: 50, endX: 10, endY: 60 },
-            { startX: 20, startY: 60, endX: 25, endY: 40 },
-            { startX: 35, startY: 70, endX: 40, endY: 30 },
-            { startX: 50, startY: 80, endX: 55, endY: 20 },
-            { startX: 65, startY: 45, endX: 70, endY: 55 },
-            { startX: 80, startY: 55, endX: 85, endY: 45 },
-            { startX: 15, startY: 40, endX: 20, endY: 60 },
-            { startX: 30, startY: 65, endX: 35, endY: 35 },
-            { startX: 45, startY: 55, endX: 50, endY: 45 },
-            { startX: 60, startY: 75, endX: 65, endY: 25 },
-            { startX: 75, startY: 85, endX: 80, endY: 15 },
-            { startX: 90, startY: 70, endX: 95, endY: 30 },
-            { startX: 12, startY: 90, endX: 17, endY: 10 },
-            { startX: 88, startY: 5, endX: 93, endY: 95 },
+            { x: 10, y: 20, color: "text-white" },
+            { x: 15, y: 60, color: "text-red-400" },
+            { x: 8, y: 80, color: "text-white" },
+            { x: 20, y: 35, color: "text-red-300" },
+            { x: 5, y: 50, color: "text-white" },
+            { x: 18, y: 15, color: "text-red-400" },
+            { x: 12, y: 70, color: "text-white" },
+            { x: 25, y: 45, color: "text-red-300" },
+            { x: 7, y: 25, color: "text-white" },
+            { x: 22, y: 85, color: "text-red-400" },
           ].map((pos, i) => (
-            <motion.div
-              key={i}
+            <div
+              key={`left-${i}`}
               className="absolute"
               style={{
-                left: `${pos.startX}%`,
-                top: `${pos.startY}%`,
-              }}
-              animate={{
-                x: [`0%`, `${pos.endX - pos.startX}%`, `0%`],
-                y: [`0%`, `${pos.endY - pos.startY}%`, `0%`],
-                opacity: [0.1, 0.3, 0.1],
-                rotate: [0, 360],
-              }}
-              transition={{
-                duration: 12 + (i % 8),
-                repeat: Infinity,
-                ease: "linear",
+                left: `${pos.x}%`,
+                top: `${pos.y}%`,
+                opacity: 0.15,
               }}
             >
-              <Sparkles
-                className={`w-6 h-6 ${
-                  i % 3 === 0
-                    ? "text-yellow-400"
-                    : i % 3 === 1
-                    ? "text-pink-400"
-                    : "text-cyan-400"
-                }`}
-              />
-            </motion.div>
+              <Sparkles className={`w-6 h-6 ${pos.color}`} />
+            </div>
+          ))}
+
+          {/* Right side - Orange and Teal sparkles */}
+          {[
+            { x: 75, y: 25, color: "text-orange-400" },
+            { x: 82, y: 55, color: "text-teal-400" },
+            { x: 78, y: 75, color: "text-orange-300" },
+            { x: 88, y: 40, color: "text-teal-300" },
+            { x: 92, y: 60, color: "text-orange-400" },
+            { x: 80, y: 20, color: "text-teal-400" },
+            { x: 85, y: 80, color: "text-orange-300" },
+            { x: 70, y: 50, color: "text-teal-400" },
+            { x: 90, y: 30, color: "text-orange-400" },
+            { x: 77, y: 90, color: "text-teal-300" },
+          ].map((pos, i) => (
+            <div
+              key={`right-${i}`}
+              className="absolute"
+              style={{
+                left: `${pos.x}%`,
+                top: `${pos.y}%`,
+                opacity: 0.15,
+              }}
+            >
+              <Sparkles className={`w-6 h-6 ${pos.color}`} />
+            </div>
           ))}
         </div>
 
         <div className="max-w-6xl mx-auto text-center relative z-10">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
+          <div>
             <div className="flex items-center justify-center gap-3 mb-16">
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Sparkles className="w-8 h-8 text-yellow-400" />
-              </motion.div>
-              <motion.h2
-                className="text-yellow-300 neon-text-yellow text-6xl"
-                animate={{
-                  textShadow: [
-                    "0 0 20px rgba(253, 224, 71, 0.8), 0 0 40px rgba(253, 224, 71, 0.6), 0 0 60px rgba(253, 224, 71, 0.4)",
-                    "0 0 30px rgba(253, 224, 71, 1), 0 0 60px rgba(253, 224, 71, 0.8), 0 0 90px rgba(253, 224, 71, 0.6)",
-                    "0 0 20px rgba(253, 224, 71, 0.8), 0 0 40px rgba(253, 224, 71, 0.6), 0 0 60px rgba(253, 224, 71, 0.4)",
-                  ],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
+              <Sparkles className="w-8 h-8 text-yellow-400" />
+              <h2 className="text-yellow-300 neon-text-yellow text-6xl">
                 Our Beloved Partners
-              </motion.h2>
-              <motion.div
-                animate={{ rotate: [0, -10, 10, 0] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              >
-                <Sparkles className="w-8 h-8 text-yellow-400" />
-              </motion.div>
+              </h2>
+              <Sparkles className="w-8 h-8 text-yellow-400" />
             </div>
-          </motion.div>
+          </div>
 
           <div className="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
             {/* Casper Network Card */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.2 }}
               whileHover={{ y: -10 }}
             >
               <a
@@ -572,10 +538,6 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
 
             {/* Autonom Card */}
             <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.4 }}
               whileHover={{ y: -10 }}
             >
               <a

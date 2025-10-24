@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactNode, useState } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { CsprClickThemes, ThemeModeType } from '@make-software/csprclick-ui';
-import { NETWORKS, networkSettings } from '@/components/settings/network';
 import { CONTENT_MODE } from '@make-software/csprclick-core-types';
 
 const ClickUI = dynamic(
@@ -45,19 +44,14 @@ const clickOptions: any = {
 };
 
 export default function ClientProvider({ children }: { children: ReactNode }) {
-  const [network, setNetwork] = useState<string>(NETWORKS[1]); // Default to Testnet
+  // No top bar customization; keep SDK init minimal
   return (
     <ClickProvider options={clickOptions}>
       <ThemeProvider theme={CsprClickThemes.dark}>
         <QueryClientProvider client={queryClient}>
           {/* Hidden ClickUI to initialize the SDK without showing the top bar */}
           <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden', opacity: 0 }}>
-            <ClickUI
-              topBarSettings={{
-                networkSettings: networkSettings(network, setNetwork),
-              }}
-              themeMode={ThemeModeType.dark}
-            />
+            <ClickUI themeMode={ThemeModeType.dark} />
           </div>
           {children}
         </QueryClientProvider>

@@ -80,14 +80,10 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
             Dashboard
           </button>
           <Button
-            onClick={(e) => {
-              e.preventDefault();
-              onConnect();
-            }}
+            onClick={(e) => { e.preventDefault(); onConnect(); }}
             className="bg-[#E91E63] hover:bg-[#E91E63]/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer"
             style={{
               fontSize: "1.125rem",
-              borderRadius: "5px",
             }}
           >
             {activeAccount ? `${activeAccount.public_key.slice(0, 6)}...${activeAccount.public_key.slice(-4)}` : 'Connect'}
@@ -164,14 +160,10 @@ export function Header({ currentPage, onNavigate, activeAccount, onConnect }: He
               Dashboard
             </button>
             <Button
-              onClick={(e) => {
-                e.preventDefault();
-                onConnect();
-              }}
+              onClick={(e) => { e.preventDefault(); onConnect(); }}
               className="bg-[#E91E63] hover:bg-[#E91E63]/90 text-white px-6 py-5 transition-all hover:scale-105 cursor-pointer mt-2"
               style={{
                 fontSize: "1.125rem",
-                borderRadius: "5px",
               }}
             >
               {activeAccount ? `${activeAccount.public_key.slice(0, 6)}...${activeAccount.public_key.slice(-4)}` : 'Connect'}
