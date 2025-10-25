@@ -3,9 +3,11 @@
 import * as React from "react";
 import * as LabelPrimitive from "@radix-ui/react-label";
 import { Slot } from "@radix-ui/react-slot";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - react-hook-form v7 exports
 import {
-  Controller,
   FormProvider,
+  Controller,
   useFormContext,
   useFormState,
   type ControllerProps,

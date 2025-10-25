@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PublicKey } from "casper-js-sdk";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -18,10 +19,18 @@ import {
   TrendingUp,
   Trophy,
   ArrowRight,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { formatNumber } from "@/lib/formatNumber";
+import { config } from "@/lib/config";
+import {
+  prepareEnterLotteryTransaction,
+  handleTransactionStatus,
+  getCsprClick,
+  getExplorerUrl,
+} from "@/lib/casper/lottery-contract";
 
 interface CasperAccount {
   public_key: string;
@@ -43,18 +52,19 @@ interface EnterLotteryProps {
 
 export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConnect }: EnterLotteryProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentDeployHash, setCurrentDeployHash] = useState<string | null>(null);
 
-  // Contract configuration (these would come from smart contract queries)
-  const ticketPrice = 50; // CSPR
-  const lotteryFee = 1; // CSPR
-  const prizePool = 12500; // CSPR
-  const jackpotProbability = 10; // 10%
-  const consolationProbability = 25; // 25%
-  const maxConsolationPrize = 50; // CSPR
-  const currentRound = 1;
-  const currentPlayId = 1;
+  // Contract configuration from environment variables
+  const ticketPrice = config.ticketPriceCspr;
+  const lotteryFee = config.lotteryFeeCspr;
+  const prizePool = 12500; // TODO: Query from contract
+  const jackpotProbability = 10; // TODO: Query from contract
+  const consolationProbability = 25; // TODO: Query from contract
+  const maxConsolationPrize = 50; // TODO: Query from contract
+  const currentRound = 1; // TODO: Query from contract
+  const currentPlayId = 1; // TODO: Query from contract
 
-  const handleBuyTicket = () => {
+  const handleBuyTicket = async () => {
     if (!activeAccount) {
       toast.error("Please connect your wallet first", {
         style: {
@@ -67,37 +77,117 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
     }
 
     setIsProcessing(true);
+    setCurrentDeployHash(null);
 
-    // Simulate Casper Network transaction
-    setTimeout(() => {
-      const requestId = `0x${Math.random().toString(16).substr(2, 16)}`;
-      const playId = `${currentPlayId}`;
-      const entry = {
-        requestId,
-        playId,
-        roundId: currentRound,
-        entryDate: new Date().toISOString(),
-        cost: ticketPrice,
-        status: "pending" as const,
-      };
+    try {
+      // Parse player's public key
+      const playerPublicKey = PublicKey.fromHex(activeAccount.public_key);
 
-      onEntrySubmit(entry);
+      // Prepare the enter_lottery transaction
+      const transaction = await prepareEnterLotteryTransaction(playerPublicKey);
+
+      // Get CSPR.click instance
+      const csprclick = getCsprClick();
+      if (!csprclick) {
+        throw new Error("CSPR.click not initialized");
+      }
+
+      // Send transaction via wallet
+      await csprclick.send(
+        { Version1: transaction.toJSON() },
+        playerPublicKey.toHex(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (status: string, data?: any) => {
+          console.log("Transaction status:", status, data);
+
+          try {
+            const result = handleTransactionStatus(status, data);
+
+            if (result) {
+              // Transaction completed
+              setIsProcessing(false);
+
+              if (result.status === "success") {
+                setCurrentDeployHash(result.deployHash);
+
+                // Create entry for UI
+                const entry = {
+                  requestId: result.deployHash,
+                  playId: `${currentPlayId}`,
+                  roundId: currentRound,
+                  entryDate: new Date().toISOString(),
+                  cost: ticketPrice,
+                  status: "pending" as const,
+                };
+
+                onEntrySubmit(entry);
+
+                // Success toast with link to explorer
+                toast.success("Ticket purchased successfully!", {
+                  description: "Transaction confirmed on Casper Network",
+                  duration: 5000,
+                  action: {
+                    label: "View on Explorer",
+                    onClick: () => {
+                      window.open(
+                        getExplorerUrl(result.deployHash),
+                        "_blank"
+                      );
+                    },
+                  },
+                  style: {
+                    background: "#1a0f2e",
+                    color: "#ffd700",
+                    border: "2px solid #ffd700",
+                  },
+                });
+
+                // Navigate to dashboard after short delay
+                setTimeout(() => {
+                  onNavigate("dashboard");
+                }, 2000);
+              } else {
+                // Transaction failed
+                toast.error("Transaction failed", {
+                  description: result.errorMessage || "Please try again",
+                  style: {
+                    background: "#1a0f2e",
+                    color: "#ff00ff",
+                    border: "2px solid #ff00ff",
+                  },
+                });
+              }
+            }
+          } catch (statusError) {
+            setIsProcessing(false);
+            toast.error("Transaction error", {
+              description:
+                statusError instanceof Error
+                  ? statusError.message
+                  : "Unknown error",
+              style: {
+                background: "#1a0f2e",
+                color: "#ff00ff",
+                border: "2px solid #ff00ff",
+              },
+            });
+          }
+        }
+      );
+    } catch (error) {
       setIsProcessing(false);
+      console.error("Error buying ticket:", error);
 
-      toast.success("Ticket purchased! Awaiting randomness...", {
-        description: `Request ID: ${requestId.substring(0, 10)}...`,
+      toast.error("Failed to purchase ticket", {
+        description:
+          error instanceof Error ? error.message : "Please try again",
         style: {
           background: "#1a0f2e",
-          color: "#ffd700",
-          border: "2px solid #ffd700",
+          color: "#ff00ff",
+          border: "2px solid #ff00ff",
         },
       });
-
-      // Navigate to dashboard to see pending ticket
-      setTimeout(() => {
-        onNavigate("dashboard");
-      }, 1500);
-    }, 2000);
+    }
   };
 
   return (
@@ -239,33 +329,60 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                     Connect Casper Wallet
                   </Button>
                 ) : (
-                  <Button
-                    onClick={handleBuyTicket}
-                    disabled={isProcessing}
-                    className="w-full casino-gradient neon-glow-yellow hover:scale-105 transition-transform h-14 cursor-pointer text-white rounded-xl text-shadow-strong"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            ease: "linear",
-                          }}
-                        >
-                          <Zap className="w-5 h-5 mr-2 icon-shadow-strong" />
-                        </motion.div>
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Ticket className="w-5 h-5 mr-2 icon-shadow-strong" />
-                        Buy Ticket for {formatNumber(ticketPrice)} CSPR
-                        <ArrowRight className="w-5 h-5 ml-2 icon-shadow-strong" />
-                      </>
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleBuyTicket}
+                      disabled={isProcessing}
+                      className="w-full casino-gradient neon-glow-yellow hover:scale-105 transition-transform h-14 cursor-pointer text-white rounded-xl text-shadow-strong disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 1,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }}
+                          >
+                            <Zap className="w-5 h-5 mr-2 icon-shadow-strong" />
+                          </motion.div>
+                          Processing Transaction...
+                        </>
+                      ) : (
+                        <>
+                          <Ticket className="w-5 h-5 mr-2 icon-shadow-strong" />
+                          Buy Ticket for {formatNumber(ticketPrice)} CSPR
+                          <ArrowRight className="w-5 h-5 ml-2 icon-shadow-strong" />
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Show transaction hash if available */}
+                    {currentDeployHash && (
+                      <div className="bg-black/30 rounded-xl p-3 border border-cyan-500/30">
+                        <p className="text-sm text-gray-400 mb-1">
+                          Transaction Hash:
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-cyan-300 font-mono text-xs break-all">
+                            {currentDeployHash}
+                          </p>
+                          <button
+                            onClick={() =>
+                              window.open(
+                                getExplorerUrl(currentDeployHash),
+                                "_blank"
+                              )
+                            }
+                            className="flex-shrink-0 text-cyan-300 hover:text-cyan-400"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     )}
-                  </Button>
+                  </div>
                 )}
               </CardContent>
             </Card>
