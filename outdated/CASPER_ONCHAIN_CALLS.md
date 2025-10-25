@@ -127,13 +127,12 @@ export async function prepareEnterLotteryTransaction(
 
   // Build runtime arguments for proxy WASM
   const runtimeArgs = Args.fromMap({
-    amount: CLValue.newCLUInt512(ticketPriceInMotes),
-    attached_value: CLValue.newCLUInt512(ticketPriceInMotes),
-    entry_point: CLValue.newCLString('enter_lottery'),
     contract_package_hash: CLValue.newCLByteArray(
       Hash.fromHex(packageHashHex).toBytes()
     ),
+    entry_point: CLValue.newCLString('enter_lottery'),
     args: serialized_args,
+    attached_value: CLValue.newCLUInt512(ticketPriceInMotes),
   });
 
   // Fetch the proxy WASM
@@ -181,14 +180,13 @@ The proxy WASM is a small wrapper contract that:
 3. **Forwards** the call to the real contract with the attached value
 4. **Returns** the result
 
-**Proxy WASM Arguments:**
+**Proxy WASM Arguments (this proxy build):**
 ```typescript
 {
-  amount: CLValue.newCLUInt512(value),           // Payment amount
-  attached_value: CLValue.newCLUInt512(value),   // Value to attach
-  entry_point: CLValue.newCLString('method'),    // Target entry point
-  contract_package_hash: CLValue.newCLByteArray(...), // Target contract
-  args: CLValue.newCLList(...)                   // Serialized arguments
+  contract_package_hash: CLValue.newCLByteArray(...), // Target package hash (32 bytes)
+  entry_point: CLValue.newCLString('method'),         // Target entry point
+  args: CLValue.newCLList(...),                       // Serialized Args as List<U8>
+  attached_value: CLValue.newCLUInt512(value),        // Value to attach
 }
 ```
 

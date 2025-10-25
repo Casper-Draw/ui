@@ -5,6 +5,7 @@ import { ReactNode, useState } from 'react';
 import { ThemeProvider } from 'styled-components';
 import { CsprClickThemes, ThemeModeType } from '@make-software/csprclick-ui';
 import { CONTENT_MODE } from '@make-software/csprclick-core-types';
+import { config as appConfig } from '@/lib/config';
 
 const ClickUI = dynamic(
   () => import('@make-software/csprclick-ui').then((mod) => mod.ClickUI),
@@ -36,9 +37,8 @@ const clickOptions: any = {
     'torus-wallet',
     'casper-signer'
   ],
-  // Ensure Testnet defaults are provided to the SDK
-  chainName: 'casper-test',
-  casperNode: 'https://rpc.testnet.casperlabs.io/rpc',
+  // Provide chain name; let wallet choose RPC endpoints internally to avoid CORS
+  chainName: appConfig.chainName,
   // Optional: if your application requires a digest/api key
   ...(DIGEST ? { digestAuth: DIGEST } : {})
 };

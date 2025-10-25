@@ -51,9 +51,9 @@ async function getProxyWASM(): Promise<Uint8Array> {
  * 2. Sends the ticket price (50 CSPR) as attached value
  * 3. Returns a request_id for tracking randomness fulfillment
  *
- * Uses the WORKING pattern from lottery-demo-dapp:
+ * Uses the WORKING pattern from lottery-demo-dapp and Odra proxy-caller:
  * - SessionBuilder with proxy WASM
- * - Attached value passed as runtime argument
+ * - Runtime args expected by proxy: package_hash, entry_point, args, attached_value
  *
  * @param playerPublicKey - The player's Casper public key
  * @returns Transaction ready to be signed and sent via CSPR.click
@@ -70,15 +70,13 @@ export async function prepareEnterLotteryTransaction(
     const packageHashHex = config.lotteryRngPackageHash.replace('hash-', '');
 
     // Prepare empty arguments for enter_lottery (it takes no args)
-    const args_bytes: Uint8Array = Args.fromMap({}).toBytes();
-
-    const serialized_args = CLValue.newCLList(
-      CLTypeUInt8,
-      Array.from(args_bytes).map(value => CLValue.newCLUint8(value))
-    );
+    // Serialize empty runtime args explicitly as 4 zero bytes (length prefix)
+    const args_bytes: Uint8Array = new Uint8Array([0, 0, 0, 0]);
+    // Encode as raw ByteArray (alternate Bytes form) to satisfy this proxy
+    const serialized_args = CLValue.newCLByteArray(args_bytes);
 
     // Build runtime arguments for proxy WASM
-    // The proxy WASM needs: amount, attached_value, entry_point, contract_package_hash, args
+    // EXACTLY matching lottery-demo-dapp client (line 38-44 of play-requests.ts)
     const runtimeArgs = Args.fromMap({
       amount: CLValue.newCLUInt512(ticketPriceInMotes),
       attached_value: CLValue.newCLUInt512(ticketPriceInMotes),
@@ -90,7 +88,15 @@ export async function prepareEnterLotteryTransaction(
     // Fetch the proxy WASM
     const wasm = await getProxyWASM();
 
-    // Build the transaction using SessionBuilder (WORKING PATTERN)
+    console.log('🔧 Transaction params:', {
+      ticketPriceInMotes,
+      gasPriceInMotes,
+      packageHash: packageHashHex,
+      chainName: config.chainName,
+      wasmSize: wasm.length,
+    });
+
+    // Build the transaction using SessionBuilder (Session WASM with proxy)
     const transaction = new SessionBuilder()
       .from(playerPublicKey)
       .runtimeArgs(runtimeArgs)
@@ -98,6 +104,9 @@ export async function prepareEnterLotteryTransaction(
       .payment(parseInt(gasPriceInMotes))
       .chainName(config.chainName)
       .build();
+
+    console.log('✅ Transaction built successfully');
+    console.log('📦 Transaction JSON:', JSON.stringify(transaction.toJSON(), null, 2));
 
     return transaction;
   } catch (error) {
