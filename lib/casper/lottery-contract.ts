@@ -70,18 +70,26 @@ export async function prepareEnterLotteryTransaction(
     const packageHashHex = config.lotteryRngPackageHash.replace('hash-', '');
 
     // Prepare empty arguments for enter_lottery (it takes no args)
-    // Serialize empty runtime args explicitly as 4 zero bytes (length prefix)
-    const args_bytes: Uint8Array = new Uint8Array([0, 0, 0, 0]);
-    // Encode as raw ByteArray (alternate Bytes form) to satisfy this proxy
-    const serialized_args = CLValue.newCLByteArray(args_bytes);
+    // NOTE: Odra's proxy_caller expects `args` as List<U8> where the payload
+    // is the serialized `Args` (even when empty). Match the reference dapp:
+    //   const args_bytes = Args.fromMap({}).toBytes();
+    //   const serialized_args = CLValue.newCLList(CLTypeUInt8, Array.from(args_bytes).map(v => CLValue.newCLUint8(v)));
+    const args_bytes: Uint8Array = Args.fromMap({}).toBytes();
+    const serialized_args = CLValue.newCLList(
+      CLTypeUInt8,
+      Array.from(args_bytes).map((v) => CLValue.newCLUint8(v))
+    );
 
     // Build runtime arguments for proxy WASM
-    // EXACTLY matching lottery-demo-dapp client (line 38-44 of play-requests.ts)
+    // Now using the working demo's proxy_caller.wasm (33K from lottery-demo-dapp)
+    // This version expects "contract_package_hash" (not "package_hash")
+    // EXACTLY matching demo pattern: lottery-demo-dapp/client/src/app/services/requests/play-requests.ts:38-44
+    const pkgBytes = Hash.fromHex(packageHashHex).toBytes();
     const runtimeArgs = Args.fromMap({
       amount: CLValue.newCLUInt512(ticketPriceInMotes),
       attached_value: CLValue.newCLUInt512(ticketPriceInMotes),
       entry_point: CLValue.newCLString('enter_lottery'),
-      contract_package_hash: CLValue.newCLByteArray(Hash.fromHex(packageHashHex).toBytes()),
+      contract_package_hash: CLValue.newCLByteArray(pkgBytes),
       args: serialized_args,
     });
 
