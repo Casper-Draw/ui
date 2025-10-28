@@ -10,19 +10,20 @@ import {
   Hash,
   PublicKey,
   SessionBuilder,
+  ContractCallBuilder,
   Transaction,
-} from 'casper-js-sdk';
-import { config, csprToMotes } from '@/lib/config';
+} from "casper-js-sdk";
+import { config, csprToMotes } from "@/lib/config";
 
 /**
  * Transaction status updates from CSPR.click
  */
 export enum TransactionStatus {
-  SENT = 'SENT',
-  PROCESSED = 'PROCESSED',
-  CANCELLED = 'CANCELLED',
-  TIMEOUT = 'TIMEOUT',
-  ERROR = 'ERROR',
+  SENT = "SENT",
+  PROCESSED = "PROCESSED",
+  CANCELLED = "CANCELLED",
+  TIMEOUT = "TIMEOUT",
+  ERROR = "ERROR",
 }
 
 /**
@@ -35,7 +36,7 @@ export enum TransactionStatus {
  * @returns Proxy WASM bytes
  */
 async function getProxyWASM(): Promise<Uint8Array> {
-  const response = await fetch('/proxy_caller.wasm');
+  const response = await fetch("/proxy_caller_lotto.wasm");
   if (!response.ok) {
     throw new Error(`Failed to fetch proxy WASM: ${response.statusText}`);
   }
@@ -67,36 +68,30 @@ export async function prepareEnterLotteryTransaction(
     const gasPriceInMotes = csprToMotes(config.gasPriceCspr);
 
     // Parse the package hash (remove 'hash-' prefix if present)
-    const packageHashHex = config.lotteryRngPackageHash.replace('hash-', '');
+    const packageHashHex = config.lotteryRngPackageHash.replace("hash-", "");
 
     // Prepare empty arguments for enter_lottery (it takes no args)
-    // NOTE: Odra's proxy_caller expects `args` as List<U8> where the payload
-    // is the serialized `Args` (even when empty). Match the reference dapp:
-    //   const args_bytes = Args.fromMap({}).toBytes();
-    //   const serialized_args = CLValue.newCLList(CLTypeUInt8, Array.from(args_bytes).map(v => CLValue.newCLUint8(v)));
     const args_bytes: Uint8Array = Args.fromMap({}).toBytes();
     const serialized_args = CLValue.newCLList(
       CLTypeUInt8,
       Array.from(args_bytes).map((v) => CLValue.newCLUint8(v))
     );
 
-    // Build runtime arguments for proxy WASM
-    // Now using the working demo's proxy_caller.wasm (33K from lottery-demo-dapp)
-    // This version expects "contract_package_hash" (not "package_hash")
-    // EXACTLY matching demo pattern: lottery-demo-dapp/client/src/app/services/requests/play-requests.ts:38-44
+    // Build runtime arguments for proxy WASM - WITH amount field for 50K proxy
+    // Using package_hash (not contract_package_hash) as expected by 50K proxy
     const pkgBytes = Hash.fromHex(packageHashHex).toBytes();
     const runtimeArgs = Args.fromMap({
       amount: CLValue.newCLUInt512(ticketPriceInMotes),
       attached_value: CLValue.newCLUInt512(ticketPriceInMotes),
-      entry_point: CLValue.newCLString('enter_lottery'),
-      contract_package_hash: CLValue.newCLByteArray(pkgBytes),
+      entry_point: CLValue.newCLString("enter_lottery"),
+      package_hash: CLValue.newCLByteArray(pkgBytes),
       args: serialized_args,
     });
 
     // Fetch the proxy WASM
     const wasm = await getProxyWASM();
 
-    console.log('🔧 Transaction params:', {
+    console.log("🔧 Transaction params:", {
       ticketPriceInMotes,
       gasPriceInMotes,
       packageHash: packageHashHex,
@@ -113,14 +108,19 @@ export async function prepareEnterLotteryTransaction(
       .chainName(config.chainName)
       .build();
 
-    console.log('✅ Transaction built successfully');
-    console.log('📦 Transaction JSON:', JSON.stringify(transaction.toJSON(), null, 2));
+    console.log("✅ Transaction built successfully");
+    console.log(
+      "📦 Transaction JSON:",
+      JSON.stringify(transaction.toJSON(), null, 2)
+    );
 
     return transaction;
   } catch (error) {
-    console.error('Error preparing enter_lottery transaction:', error);
+    console.error("Error preparing enter_lottery transaction:", error);
     throw new Error(
-      `Failed to prepare transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to prepare transaction: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
     );
   }
 }
@@ -130,7 +130,7 @@ export async function prepareEnterLotteryTransaction(
  */
 export interface TransactionResult {
   deployHash: string;
-  status: 'success' | 'error';
+  status: "success" | "error";
   errorMessage?: string;
 }
 
@@ -146,7 +146,10 @@ export function handleTransactionStatus(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data?: any
 ): TransactionResult | null {
-  switch (status) {
+  // Normalize status to uppercase for comparison
+  const normalizedStatus = status.toUpperCase();
+
+  switch (normalizedStatus) {
     case TransactionStatus.SENT:
       // Transaction sent to network, waiting for confirmation
       return null;
@@ -155,22 +158,24 @@ export function handleTransactionStatus(
       // Transaction confirmed on blockchain
       if (data?.csprCloudTransaction) {
         const tx = data.csprCloudTransaction;
+        // Get deploy hash from multiple possible locations
+        const deployHash = tx.deploy_hash || tx.hash || data.transactionHash || data.deployHash;
         return {
-          deployHash: tx.deploy_hash || tx.hash,
-          status: tx.error_message ? 'error' : 'success',
+          deployHash,
+          status: tx.error_message ? "error" : "success",
           errorMessage: tx.error_message,
         };
       }
       return null;
 
     case TransactionStatus.CANCELLED:
-      throw new Error('Transaction cancelled by user');
+      throw new Error("Transaction cancelled by user");
 
     case TransactionStatus.TIMEOUT:
-      throw new Error('Transaction timed out');
+      throw new Error("Transaction timed out");
 
     case TransactionStatus.ERROR:
-      throw new Error(data?.message || 'Transaction failed');
+      throw new Error(data?.message || "Transaction failed");
 
     default:
       return null;
@@ -189,7 +194,7 @@ export function getExplorerUrl(deployHash: string): string {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getCsprClick(): any {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return null;
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

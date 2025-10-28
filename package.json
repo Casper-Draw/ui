@@ -11,6 +11,8 @@
   "dependencies": {
     "@fontsource/montserrat": "^5.2.8",
     "@fontsource/poppins": "^5.2.7",
+    "@make-software/csprclick-core-client": "^1.11.0",
+    "@make-software/csprclick-core-types": "^1.11.0",
     "@make-software/csprclick-ui": "^1.11.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -55,10 +57,9 @@
     "react-query": "^3.39.3",
     "react-resizable-panels": "^2.1.9",
     "recharts": "^2.15.4",
+    "socket.io-client": "^4.8.1",
     "sonner": "^2.0.7",
     "styled-components": "5.3.11",
-    "@make-software/csprclick-core-client": "^1.11.0",
-    "@make-software/csprclick-core-types": "^1.11.0",
     "tailwind-merge": "^3.3.1",
     "vaul": "^1.1.2"
   },

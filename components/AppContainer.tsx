@@ -7,6 +7,8 @@ import { LandingPage } from "@/components/LandingPage";
 import { EnterLottery } from "@/components/EnterLottery";
 import { Dashboard } from "@/components/Dashboard";
 import { WinningFlow } from "@/components/WinningFlow";
+import { fetchPlayerPlays, checkBackendHealth } from "@/lib/api";
+import { getAccountHash } from "@/lib/casper-utils";
 
 // Import the mock data and types from original App.tsx
 interface CasperAccount {
@@ -22,6 +24,7 @@ interface LotteryEntry {
   status: "pending" | "won-jackpot" | "won-consolation" | "lost";
   prizeAmount?: number;
   settledDate?: string;
+  awaitingFulfillment?: boolean; // Flag for fresh transactions awaiting randomness
 }
 
 interface WinningState {
@@ -158,6 +161,79 @@ export default function AppContainer() {
     show: false,
     entry: null,
   });
+  const [isLoadingPlays, setIsLoadingPlays] = useState(false);
+  const [backendHealthy, setBackendHealthy] = useState(false);
+
+  // Check backend health on mount and get initial active account
+  useEffect(() => {
+    checkBackendHealth().then(setBackendHealthy);
+
+    // Check if wallet is already connected
+    const checkInitialAccount = async () => {
+      try {
+        const inst = (typeof window !== 'undefined' ? window.csprclick : undefined) ||
+          (clickRef as any);
+
+        if (inst && typeof inst.getActivePublicKey === 'function') {
+          const publicKey = await inst.getActivePublicKey();
+          if (publicKey) {
+            console.log('[AppContainer] Found initial connected account:', publicKey);
+            setActiveAccount({ public_key: publicKey });
+          } else {
+            console.log('[AppContainer] No account connected initially');
+          }
+        }
+      } catch (error) {
+        console.log('[AppContainer] Error checking initial account:', error);
+      }
+    };
+
+    checkInitialAccount();
+  }, [clickRef]);
+
+  // Fetch player plays when activeAccount changes
+  useEffect(() => {
+    console.log('[AppContainer] Active account changed:', activeAccount?.public_key);
+
+    if (!activeAccount?.public_key) {
+      // No account connected, use mock data
+      console.log('[AppContainer] No account, using mock data');
+      setEntries(mockEntries);
+      return;
+    }
+
+    // Account connected, fetch real plays
+    const loadPlays = async () => {
+      console.log('[AppContainer] Loading plays for public key:', activeAccount.public_key);
+      setIsLoadingPlays(true);
+
+      try {
+        // Convert public key to account hash (what the contract uses)
+        const accountHash = getAccountHash(activeAccount.public_key);
+        console.log('[AppContainer] Account hash:', accountHash);
+
+        const plays = await fetchPlayerPlays(accountHash);
+        console.log('[AppContainer] Received plays:', plays.length);
+
+        if (plays.length > 0) {
+          // Use real data from backend
+          console.log('[AppContainer] Using real data from backend');
+          setEntries(plays);
+        } else {
+          // No plays found, use mock data for demo purposes
+          console.log('[AppContainer] No plays found, using mock data');
+          setEntries(mockEntries);
+        }
+      } catch (error) {
+        console.error('[AppContainer] Error loading plays:', error);
+        setEntries(mockEntries);
+      }
+
+      setIsLoadingPlays(false);
+    };
+
+    loadPlays();
+  }, [activeAccount?.public_key]);
 
   // Set up wallet event listeners
   useEffect(() => {
@@ -180,9 +256,32 @@ export default function AppContainer() {
     setEntries([entry, ...entries]);
   };
 
+  const handleRefreshPlays = async () => {
+    if (activeAccount?.public_key) {
+      console.log('[AppContainer] Manual refresh triggered');
+      setIsLoadingPlays(true);
+      try {
+        const accountHash = getAccountHash(activeAccount.public_key);
+        const plays = await fetchPlayerPlays(accountHash);
+        if (plays.length > 0) {
+          setEntries(plays);
+        }
+      } catch (error) {
+        console.error('[AppContainer] Error refreshing plays:', error);
+      }
+      setIsLoadingPlays(false);
+    }
+  };
+
   const handleNavigate = (page: string) => {
     setCurrentPage(page);
     window.scrollTo(0, 0);
+
+    // If navigating to dashboard and wallet connected, refresh plays
+    if (page === 'dashboard' && activeAccount?.public_key) {
+      console.log('[AppContainer] Navigated to dashboard, refreshing plays');
+      handleRefreshPlays();
+    }
   };
 
   const handleWinningCelebration = (entry: LotteryEntry) => {

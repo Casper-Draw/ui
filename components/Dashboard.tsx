@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -31,8 +31,133 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { formatNumber } from "@/lib/formatNumber";
+import { useWaitForFulfillment } from "@/lib/websocket-client";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 const jackpotGif = "/assets/69bb9862d8d20b48acde1b9ff6c23cc9a1a6af67.png";
+
+// Component for handling individual pending entry with WebSocket
+function PendingEntryCard({
+  entry,
+  isSettling,
+  onSettle,
+}: {
+  entry: LotteryEntry;
+  isSettling: boolean;
+  onSettle: () => void;
+}) {
+  // Use WebSocket hook only if entry has awaitingFulfillment flag
+  const { isFulfilled, isWaiting } = useWaitForFulfillment(
+    entry.requestId,
+    entry.awaitingFulfillment === true
+  );
+
+  // Show toast when fulfilled
+  useEffect(() => {
+    if (isFulfilled) {
+      toast.success("Ticket awaiting settlement 🎲", {
+        description: "Randomness fulfilled! You can now check your results.",
+        style: {
+          background: "#1a0f2e",
+          color: "#00ffff",
+          border: "2px solid #00ffff",
+        },
+      });
+    }
+  }, [isFulfilled]);
+
+  const isButtonDisabled = isSettling || isWaiting;
+
+  return (
+    <motion.div
+      key={entry.requestId}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="bg-black/30 rounded-xl p-3 md:p-4 border border-cyan-500/30 hover:border-cyan-500/60 transition-colors"
+    >
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4">
+        <div className="flex-1 w-full md:w-auto">
+          <div className="flex items-center gap-1 md:gap-2 mb-2 flex-wrap">
+            <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
+              Play #{entry.playId}
+            </Badge>
+            <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
+              Round #{entry.roundId}
+            </Badge>
+            <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/50 animate-pulse text-sm">
+              <Clock className="w-3 h-3 mr-1" />
+              Pending
+            </Badge>
+            {isWaiting && (
+              <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/50 animate-pulse text-sm">
+                <Zap className="w-3 h-3 mr-1" />
+                Awaiting Randomness
+              </Badge>
+            )}
+          </div>
+          <div className="text-sm md:text-base text-gray-400 space-y-1">
+            <div className="break-all">
+              Request ID:{" "}
+              <span className="text-cyan-300 font-mono text-[10px] md:text-sm">
+                {entry.requestId.substring(0, 20)}...
+              </span>
+            </div>
+            <div className="text-sm">
+              Purchased: {new Date(entry.entryDate).toLocaleString()}
+            </div>
+            <div>
+              Cost:{" "}
+              <span className="text-white">
+                {formatNumber(entry.cost)} CSPR
+              </span>
+            </div>
+          </div>
+        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <Button
+                  onClick={onSettle}
+                  disabled={isButtonDisabled}
+                  className="bg-neon-pink hover:bg-neon-pink/90 text-white hover:scale-105 transition-transform cursor-pointer w-full md:w-auto text-base md:text-lg whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSettling ? (
+                    <>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                      >
+                        <Zap className="w-4 h-4 mr-2" />
+                      </motion.div>
+                      Settling...
+                    </>
+                  ) : (
+                    <>Check Results</>
+                  )}
+                </Button>
+              </div>
+            </TooltipTrigger>
+            {isWaiting && (
+              <TooltipContent>
+                <p>Still awaiting randomness...</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    </motion.div>
+  );
+}
 
 interface LotteryEntry {
   requestId: string;
@@ -43,6 +168,7 @@ interface LotteryEntry {
   status: "pending" | "won-jackpot" | "won-consolation" | "lost";
   prizeAmount?: number;
   settledDate?: string;
+  awaitingFulfillment?: boolean;
 }
 
 interface DashboardProps {
@@ -341,70 +467,12 @@ DashboardProps) {
                 ) : (
                   <div className="space-y-3">
                     {pendingEntries.map((entry) => (
-                      <motion.div
+                      <PendingEntryCard
                         key={entry.requestId}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="bg-black/30 rounded-xl p-3 md:p-4 border border-cyan-500/30 hover:border-cyan-500/60 transition-colors"
-                      >
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4">
-                          <div className="flex-1 w-full md:w-auto">
-                            <div className="flex items-center gap-1 md:gap-2 mb-2 flex-wrap">
-                              <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
-                                Play #{entry.playId}
-                              </Badge>
-                              <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
-                                Round #{entry.roundId}
-                              </Badge>
-                              <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/50 animate-pulse text-sm">
-                                <Clock className="w-3 h-3 mr-1" />
-                                Pending
-                              </Badge>
-                            </div>
-                            <div className="text-sm md:text-base text-gray-400 space-y-1">
-                              <div className="break-all">
-                                Request ID:{" "}
-                                <span className="text-cyan-300 font-mono text-[10px] md:text-sm">
-                                  {entry.requestId.substring(0, 20)}...
-                                </span>
-                              </div>
-                              <div className="text-sm">
-                                Purchased:{" "}
-                                {new Date(entry.entryDate).toLocaleString()}
-                              </div>
-                              <div>
-                                Cost:{" "}
-                                <span className="text-white">
-                                  {formatNumber(entry.cost)} CSPR
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            onClick={() => handleSettle(entry)}
-                            disabled={settlingRequests.has(entry.requestId)}
-                            className="bg-neon-pink hover:bg-neon-pink/90 text-white hover:scale-105 transition-transform cursor-pointer w-full md:w-auto text-base md:text-lg whitespace-nowrap"
-                          >
-                            {settlingRequests.has(entry.requestId) ? (
-                              <>
-                                <motion.div
-                                  animate={{ rotate: 360 }}
-                                  transition={{
-                                    duration: 1,
-                                    repeat: Infinity,
-                                    ease: "linear",
-                                  }}
-                                >
-                                  <Zap className="w-4 h-4 mr-2" />
-                                </motion.div>
-                                Settling...
-                              </>
-                            ) : (
-                              <>Check Results</>
-                            )}
-                          </Button>
-                        </div>
-                      </motion.div>
+                        entry={entry}
+                        isSettling={settlingRequests.has(entry.requestId)}
+                        onSettle={() => handleSettle(entry)}
+                      />
                     ))}
                   </div>
                 )}

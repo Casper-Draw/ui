@@ -1,0 +1,122 @@
+/**
+ * API client for Casper Draw Backend
+ */
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+
+export interface BackendLotteryPlay {
+  play_id: string;
+  request_id: string;
+  round_id: number;
+  player: string;
+  timestamp: string;
+  status: 'pending' | 'settled';
+  entry_deploy_hash: string;
+  prize_amount?: string;
+  is_jackpot?: boolean;
+  jackpot_amount?: string;
+  settled_at?: string;
+  settle_deploy_hash?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface LotteryEntry {
+  requestId: string;
+  playId: string;
+  roundId: number;
+  entryDate: string;
+  cost: number;
+  status: "pending" | "won-jackpot" | "won-consolation" | "lost";
+  prizeAmount?: number;
+  settledDate?: string;
+}
+
+/**
+ * Convert motes to CSPR (divide by 1e9)
+ */
+function motesToCspr(motes: string): number {
+  return parseInt(motes) / 1_000_000_000;
+}
+
+/**
+ * Convert backend play to frontend LotteryEntry
+ */
+export function backendPlayToEntry(play: BackendLotteryPlay, ticketCost: number = 50): LotteryEntry {
+  let status: LotteryEntry['status'];
+  let prizeAmount: number | undefined;
+
+  if (play.status === 'pending') {
+    status = 'pending';
+  } else {
+    // Settled
+    if (play.is_jackpot) {
+      status = 'won-jackpot';
+      prizeAmount = play.jackpot_amount ? motesToCspr(play.jackpot_amount) : undefined;
+    } else if (play.prize_amount && parseInt(play.prize_amount) > 0) {
+      status = 'won-consolation';
+      prizeAmount = motesToCspr(play.prize_amount);
+    } else {
+      status = 'lost';
+    }
+  }
+
+  return {
+    requestId: play.request_id,
+    playId: play.play_id,
+    roundId: play.round_id,
+    entryDate: play.timestamp,
+    cost: ticketCost,
+    status,
+    prizeAmount,
+    settledDate: play.settled_at,
+  };
+}
+
+/**
+ * Fetch player plays from backend
+ */
+export async function fetchPlayerPlays(
+  playerAddress: string,
+  status?: 'pending' | 'settled'
+): Promise<LotteryEntry[]> {
+  try {
+    let url = `${API_BASE_URL}/player/${playerAddress}/plays`;
+    if (status) {
+      url += `?status=${status}`;
+    }
+
+    console.log('[API] Fetching plays:', { url, playerAddress });
+    const response = await fetch(url);
+
+    console.log('[API] Response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[API] Error response:', errorText);
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log('[API] Received data:', data);
+    const plays: BackendLotteryPlay[] = data.plays || [];
+    console.log('[API] Parsed plays count:', plays.length);
+
+    return plays.map(play => backendPlayToEntry(play));
+  } catch (error) {
+    console.error('[API] Failed to fetch player plays:', error);
+    return [];
+  }
+}
+
+/**
+ * Check if backend is healthy
+ */
+export async function checkBackendHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
+    return response.ok;
+  } catch {
+    return false;
+  }
+}

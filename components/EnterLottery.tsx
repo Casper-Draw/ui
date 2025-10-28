@@ -118,6 +118,7 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                   entryDate: new Date().toISOString(),
                   cost: ticketPrice,
                   status: "pending" as const,
+                  awaitingFulfillment: true, // Mark as fresh transaction
                 };
 
                 onEntrySubmit(entry);
