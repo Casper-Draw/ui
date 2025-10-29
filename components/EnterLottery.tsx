@@ -48,16 +48,21 @@ interface EnterLotteryProps {
   }) => void;
   activeAccount: CasperAccount | null;
   onConnect: () => void;
+  currentJackpotCspr?: number;
 }
 
-export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConnect }: EnterLotteryProps) {
+export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConnect, currentJackpotCspr }: EnterLotteryProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentDeployHash, setCurrentDeployHash] = useState<string | null>(null);
 
   // Contract configuration from environment variables
   const ticketPrice = config.ticketPriceCspr;
   const lotteryFee = config.lotteryFeeCspr;
-  const prizePool = 12500; // TODO: Query from contract
+  const prizePool = currentJackpotCspr ?? 0;
+  const prizePoolDisplay =
+    currentJackpotCspr === null || currentJackpotCspr === undefined
+      ? "--"
+      : formatNumber(prizePool);
   const jackpotProbability = 10; // TODO: Query from contract
   const consolationProbability = 25; // TODO: Query from contract
   const maxConsolationPrize = 50; // TODO: Query from contract
@@ -421,7 +426,7 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
                         repeat: Infinity,
                       }}
                     >
-                      {formatNumber(prizePool)} CSPR
+                      {prizePoolDisplay} CSPR
                     </motion.div>
                     <p className="text-[10px] md:text-sm text-white font-extra-bold">
                       Win 100% of prize pool!

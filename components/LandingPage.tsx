@@ -49,6 +49,7 @@ const SECRET_STAR_INDEX = RIGHT_SPARKLES.length - 1;
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
+  currentJackpotCspr?: number;
 }
 
 // Component for each animated symbol (dollar sign or Casper icon)
@@ -133,7 +134,11 @@ function AnimatedSymbol({ index }: { index: number }) {
   );
 }
 
-export function LandingPage({ onNavigate }: LandingPageProps) {
+export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps) {
+  const jackpotDisplay =
+    currentJackpotCspr === null || currentJackpotCspr === undefined
+      ? "--"
+      : formatNumber(currentJackpotCspr);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -377,7 +382,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             >
               <div className="flex flex-col md:flex-row md:items-center md:justify-center md:gap-6 leading-none">
                 <div className="text-[96px] md:text-[120px] lg:text-[182px] xl:text-[234px] mb-2 md:mb-0">
-                  {formatNumber(125000)}
+                  {jackpotDisplay}
                 </div>
                 <div className="text-[96px] md:text-[120px] lg:text-[182px] xl:text-[234px]">
                   CSPR

@@ -35,8 +35,25 @@ export interface LotteryEntry {
 /**
  * Convert motes to CSPR (divide by 1e9)
  */
-function motesToCspr(motes: string): number {
-  return parseInt(motes) / 1_000_000_000;
+function motesToCspr(motes: string | number | bigint | null | undefined): number {
+  if (motes === null || motes === undefined) {
+    return 0;
+  }
+
+  try {
+    if (typeof motes === 'bigint') {
+      return Number(motes) / 1_000_000_000;
+    }
+
+    const numeric = typeof motes === 'number' ? motes : Number(motes);
+    if (Number.isNaN(numeric)) {
+      return 0;
+    }
+    return numeric / 1_000_000_000;
+  } catch (error) {
+    console.error('[API] Failed to convert motes to CSPR:', error);
+    return 0;
+  }
 }
 
 /**
@@ -165,5 +182,39 @@ export async function checkBackendHealth(): Promise<boolean> {
     return response.ok;
   } catch {
     return false;
+  }
+}
+
+export interface LotteryCurrentState {
+  round?: {
+    round_id: number;
+    total_plays?: number;
+    final_jackpot?: string | number | null;
+  } | null;
+  config?: Record<string, unknown> | null;
+  stats?: {
+    current_jackpot?: string | number | null;
+  } | null;
+}
+
+/**
+ * Fetch the current lottery state (jackpot, round info, etc.)
+ */
+export async function fetchCurrentJackpot(): Promise<number | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/lottery/current`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[API] Failed to fetch current jackpot:', errorText);
+      return null;
+    }
+
+    const data: LotteryCurrentState = await response.json();
+    const rawJackpot = data?.stats?.current_jackpot ?? data?.round?.final_jackpot ?? 0;
+    const jackpotCspr = motesToCspr(rawJackpot);
+    return Number.isFinite(jackpotCspr) ? jackpotCspr : null;
+  } catch (error) {
+    console.error('[API] Error fetching current jackpot:', error);
+    return null;
   }
 }

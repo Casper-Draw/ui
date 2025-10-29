@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -33,11 +33,18 @@ import { toast } from "sonner";
 import { formatNumber } from "@/lib/formatNumber";
 import { useWaitForFulfillment } from "@/lib/websocket-client";
 import {
+  prepareSettleLotteryTransaction,
+  handleTransactionStatus,
+  getCsprClick,
+  getExplorerUrl,
+} from "@/lib/casper/lottery-contract";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "./ui/tooltip";
+import { PublicKey } from "casper-js-sdk";
 
 const jackpotGif = "/assets/69bb9862d8d20b48acde1b9ff6c23cc9a1a6af67.png";
 
@@ -46,10 +53,12 @@ function PendingEntryCard({
   entry,
   isSettling,
   onSettle,
+  onFulfillment,
 }: {
   entry: LotteryEntry;
   isSettling: boolean;
   onSettle: () => void;
+  onFulfillment?: (requestId: string) => void;
 }) {
   // Use WebSocket hook only if entry has awaitingFulfillment flag AND real request_id
   // Real request_ids are short hex format: "0x21" (not long deploy hashes)
@@ -60,6 +69,8 @@ function PendingEntryCard({
     entry.requestId,
     shouldEnableWebSocket
   );
+
+  const hasNotifiedRef = useRef(false);
 
   // Show toast when fulfilled
   useEffect(() => {
@@ -75,11 +86,31 @@ function PendingEntryCard({
     }
   }, [isFulfilled]);
 
-  const isButtonDisabled = isSettling || isWaiting;
+  // Inform parent when fulfillment arrives (avoid duplicate calls)
+  useEffect(() => {
+    if (isFulfilled && !hasNotifiedRef.current) {
+      hasNotifiedRef.current = true;
+      onFulfillment?.(entry.requestId);
+    }
+  }, [isFulfilled, entry.requestId, onFulfillment]);
+
+  const awaitingFulfillment = entry.awaitingFulfillment === true;
+  const isButtonDisabled = isSettling || awaitingFulfillment || isWaiting;
+  const statusBadgeClass = awaitingFulfillment
+    ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50 animate-pulse text-sm"
+    : "bg-emerald-500/20 text-emerald-300 border-emerald-500/50 text-sm";
+  const tooltipMessage = (() => {
+    if (isSettling) {
+      return "Settlement transaction in progress...";
+    }
+    if (awaitingFulfillment || isWaiting) {
+      return "Randomness not ready yet. Please wait for fulfillment.";
+    }
+    return undefined;
+  })();
 
   return (
     <motion.div
-      key={entry.requestId}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       className="bg-black/30 rounded-xl p-3 md:p-4 border border-cyan-500/30 hover:border-cyan-500/60 transition-colors"
@@ -93,11 +124,20 @@ function PendingEntryCard({
             <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
               Round #{entry.roundId}
             </Badge>
-            <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/50 animate-pulse text-sm">
-              <Clock className="w-3 h-3 mr-1" />
-              Pending
+            <Badge className={statusBadgeClass}>
+              {awaitingFulfillment ? (
+                <>
+                  <Clock className="w-3 h-3 mr-1" />
+                  Pending
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  Ready to Settle
+                </>
+              )}
             </Badge>
-            {isWaiting && (
+            {awaitingFulfillment && (
               <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/50 animate-pulse text-sm">
                 <Zap className="w-3 h-3 mr-1" />
                 Awaiting Randomness
@@ -151,9 +191,9 @@ function PendingEntryCard({
                 </Button>
               </div>
             </TooltipTrigger>
-            {isWaiting && (
+            {tooltipMessage && (
               <TooltipContent>
-                <p>Still awaiting randomness...</p>
+                <p>{tooltipMessage}</p>
               </TooltipContent>
             )}
           </Tooltip>
@@ -175,17 +215,26 @@ interface LotteryEntry {
   awaitingFulfillment?: boolean;
 }
 
+interface CasperAccount {
+  public_key: string;
+}
+
 interface DashboardProps {
   onNavigate: (page: string) => void;
   entries: LotteryEntry[];
+  activeAccount: CasperAccount | null;
   onWinningCelebration?: (entry: LotteryEntry) => void;
+  onFulfillment?: (requestId: string) => void;
+  onRefresh?: () => void | Promise<void>;
 }
 
 export function Dashboard({
   onNavigate,
   entries,
-}: // onWinningCelebration,
-DashboardProps) {
+  activeAccount,
+  onFulfillment,
+  onRefresh,
+}: DashboardProps) {
   const [settlingRequests, setSettlingRequests] = useState<Set<string>>(
     new Set()
   );
@@ -212,69 +261,128 @@ DashboardProps) {
   const totalSpent = entries.reduce((sum, entry) => sum + entry.cost, 0);
   const netProfit = totalWon - totalSpent;
 
-  const handleSettle = (entry: LotteryEntry) => {
-    setSettlingRequests(new Set(settlingRequests).add(entry.requestId));
+  const handleSettle = async (entry: LotteryEntry) => {
+    if (entry.awaitingFulfillment) {
+      toast.info("Still awaiting randomness", {
+        description: "Please wait for the Autonom oracle to fulfill this request.",
+        style: {
+          background: "#1a0f2e",
+          color: "#00ffff",
+          border: "2px solid #00ffff",
+        },
+      });
+      return;
+    }
 
-    // Simulate settle_lottery() call
-    setTimeout(() => {
-      // Deterministic outcome for demo based on playId to showcase all three outcomes
-      // let status: "won-jackpot" | "won-consolation" | "lost";
-      let prizeAmount = 0;
+    if (!activeAccount?.public_key) {
+      toast.error("Connect your wallet", {
+        description: "You need to connect CSPR.click before settling a ticket.",
+        style: {
+          background: "#1a0f2e",
+          color: "#ff00ff",
+          border: "2px solid #ff00ff",
+        },
+      });
+      return;
+    }
 
-      // Play #1847 -> Lost (better luck next time)
-      // Play #1846 -> Consolation prize
-      // Play #1845 -> Jackpot
-      if (entry.playId === "1845") {
-        // Jackpot!
-        // status = "won-jackpot";
-        prizeAmount = 12500; // Entire prize pool
-        const jackpotEntryData = {
-          ...entry,
-          status: "won-jackpot" as const,
-          prizeAmount,
-          settledDate: new Date().toISOString(),
-        };
-        setJackpotPrizeAmount(prizeAmount);
-        setJackpotEntry(jackpotEntryData);
-        setShowJackpotModal(true);
-      } else if (entry.playId === "1846") {
-        // Consolation prize
-        // status = "won-consolation";
-        prizeAmount = 350; // Fixed amount for demo
-        const consolationEntryData = {
-          ...entry,
-          status: "won-consolation" as const,
-          prizeAmount,
-          settledDate: new Date().toISOString(),
-        };
-        setConsolationEntry(consolationEntryData);
-        setShowConsolationModal(true);
-      } else {
-        // No win (Play #1847 and any other)
-        // status = "lost";
-        toast.info("Better luck next time!", {
-          description: "You didn't win this time. Try again!",
-          style: {
-            background: "#1a0f2e",
-            color: "#ff00ff",
-            border: "2px solid #ff00ff",
-          },
-        });
+    setSettlingRequests((prev) => {
+      const next = new Set(prev);
+      next.add(entry.requestId);
+      return next;
+    });
+
+    try {
+      const playerPublicKey = PublicKey.fromHex(activeAccount.public_key);
+      const transaction = await prepareSettleLotteryTransaction(
+        playerPublicKey,
+        entry.requestId
+      );
+
+      const csprclick = getCsprClick();
+      if (!csprclick) {
+        throw new Error("CSPR.click wallet not available");
       }
 
-      // const updatedEntry: LotteryEntry = {
-      //   ...entry,
-      //   status,
-      //   prizeAmount,
-      //   settledDate: new Date().toISOString(),
-      // };
+      await csprclick.send(
+        { Version1: transaction.toJSON() },
+        playerPublicKey.toHex(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (status: string, data?: any) => {
+          console.log("[Dashboard] Settle transaction status:", status, data);
+          try {
+            const result = handleTransactionStatus(status, data);
+            if (!result) {
+              return;
+            }
 
+            setSettlingRequests((prev) => {
+              const next = new Set(prev);
+              next.delete(entry.requestId);
+              return next;
+            });
+
+            if (result.status === "success") {
+              toast.success("Settlement deploy sent!", {
+                description: "We'll refresh your ticket once the transaction is processed.",
+                action: {
+                  label: "View",
+                  onClick: () => window.open(getExplorerUrl(result.deployHash), "_blank"),
+                },
+                style: {
+                  background: "#1a0f2e",
+                  color: "#00ffff",
+                  border: "2px solid #00ffff",
+                },
+              });
+              void onRefresh?.();
+            } else {
+              toast.error("Settlement failed", {
+                description: result.errorMessage || "Transaction reverted on-chain.",
+                style: {
+                  background: "#1a0f2e",
+                  color: "#ff00ff",
+                  border: "2px solid #ff00ff",
+                },
+              });
+            }
+          } catch (statusError) {
+            setSettlingRequests((prev) => {
+              const next = new Set(prev);
+              next.delete(entry.requestId);
+              return next;
+            });
+            toast.error("Settlement error", {
+              description:
+                statusError instanceof Error
+                  ? statusError.message
+                  : "Transaction was cancelled.",
+              style: {
+                background: "#1a0f2e",
+                color: "#ff00ff",
+                border: "2px solid #ff00ff",
+              },
+            });
+          }
+        }
+      );
+    } catch (error) {
       setSettlingRequests((prev) => {
         const next = new Set(prev);
         next.delete(entry.requestId);
         return next;
       });
-    }, 2500);
+
+      toast.error("Failed to submit settlement", {
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred.",
+        style: {
+          background: "#1a0f2e",
+          color: "#ff00ff",
+          border: "2px solid #ff00ff",
+        },
+      });
+    }
   };
 
   return (
@@ -405,7 +513,7 @@ DashboardProps) {
                       : "text-red-400"
                   } whitespace-nowrap`}
                 >
-                  {netProfit >= 0 ? "+" : ""}
+                  {netProfit > 0 ? "+" : netProfit < 0 ? "-" : ""}
                   {formatNumber(Math.abs(netProfit))}
                 </div>
                 <p className="text-sm md:text-base mt-1 text-white">
@@ -472,10 +580,11 @@ DashboardProps) {
                   <div className="space-y-3">
                     {pendingEntries.map((entry) => (
                       <PendingEntryCard
-                        key={entry.requestId}
+                        key={`${entry.requestId}-${entry.playId}`}
                         entry={entry}
                         isSettling={settlingRequests.has(entry.requestId)}
                         onSettle={() => handleSettle(entry)}
+                        onFulfillment={onFulfillment}
                       />
                     ))}
                   </div>
@@ -508,7 +617,7 @@ DashboardProps) {
                   <div className="space-y-3">
                     {settledEntries.map((entry) => (
                       <motion.div
-                        key={entry.requestId}
+                        key={`${entry.requestId}-${entry.playId}`}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className={`bg-black/30 rounded-xl p-3 md:p-4 border ${

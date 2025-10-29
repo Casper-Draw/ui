@@ -43,8 +43,12 @@ export function useWaitForFulfillment(
   useEffect(() => {
     // Don't connect if disabled or no requestId
     if (!enabled || !requestId) {
+      setIsWaiting(false);
       return;
     }
+
+    setIsFulfilled(false);
+    setIsTimedOut(false);
 
     console.log(`[WS] Connecting to wait for fulfillment of request_id: ${requestId}`);
     setIsWaiting(true);
@@ -65,6 +69,7 @@ export function useWaitForFulfillment(
       console.log(`[WS] Fulfilled event received:`, data);
       setIsFulfilled(true);
       setIsWaiting(false);
+      socketRef.current = null;
       socket.disconnect();
     });
 
@@ -72,11 +77,16 @@ export function useWaitForFulfillment(
       console.log(`[WS] Timeout waiting for request_id: ${requestId}`);
       setIsTimedOut(true);
       setIsWaiting(false);
+      socketRef.current = null;
       socket.disconnect();
     });
 
     socket.on('disconnect', () => {
       console.log('[WS] Disconnected from fulfillment server');
+      setIsWaiting(false);
+      if (socketRef.current === socket) {
+        socketRef.current = null;
+      }
     });
 
     socket.on('connect_error', (error) => {
@@ -91,6 +101,7 @@ export function useWaitForFulfillment(
         socketRef.current.disconnect();
         socketRef.current = null;
       }
+      setIsWaiting(false);
     };
   }, [requestId, enabled]);
 

@@ -200,3 +200,55 @@ export function getCsprClick(): any {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (window as any).csprclick;
 }
+
+/**
+ * Prepare settle_lottery transaction for the LotteryRng contract.
+ *
+ * @param playerPublicKey - The player's Casper public key
+ * @param requestId - Request ID to settle (hex or decimal string)
+ */
+export async function prepareSettleLotteryTransaction(
+  playerPublicKey: PublicKey,
+  requestId: string
+): Promise<Transaction> {
+  try {
+    const packageHashHex = config.lotteryRngPackageHash.replace("hash-", "");
+    const gasPriceInMotes = csprToMotes(config.gasPriceCspr);
+
+    const normalizedRequestId = (() => {
+      const trimmed = requestId.trim();
+      if (!trimmed) {
+        throw new Error("Invalid request_id: empty");
+      }
+      if (trimmed.startsWith("0x") || trimmed.startsWith("0X")) {
+        return BigInt(trimmed);
+      }
+      if (/^\d+$/.test(trimmed)) {
+        return BigInt(trimmed);
+      }
+      return BigInt(`0x${trimmed}`);
+    })();
+
+    const runtimeArgs = Args.fromMap({
+      request_id: CLValue.newCLUInt256(normalizedRequestId),
+    });
+
+    const transaction = new ContractCallBuilder()
+      .from(playerPublicKey)
+      .byPackageHash(packageHashHex)
+      .entryPoint("settle_lottery")
+      .runtimeArgs(runtimeArgs)
+      .payment(parseInt(gasPriceInMotes, 10))
+      .chainName(config.chainName)
+      .build();
+
+    return transaction;
+  } catch (error) {
+    console.error("Error preparing settle_lottery transaction:", error);
+    throw new Error(
+      `Failed to prepare settle transaction: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}

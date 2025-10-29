@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useClickRef } from "@make-software/csprclick-ui";
 import { Header } from "@/components/Header";
 import { LandingPage } from "@/components/LandingPage";
 import { EnterLottery } from "@/components/EnterLottery";
 import { Dashboard } from "@/components/Dashboard";
 import { WinningFlow } from "@/components/WinningFlow";
-import { fetchPlayerPlays, checkBackendHealth, fetchPlayByDeployHash } from "@/lib/api";
+import { fetchPlayerPlays, checkBackendHealth, fetchPlayByDeployHash, fetchCurrentJackpot } from "@/lib/api";
 import { getAccountHash } from "@/lib/casper-utils";
 
 // Import the mock data and types from original App.tsx
@@ -163,10 +163,72 @@ export default function AppContainer() {
   });
   const [isLoadingPlays, setIsLoadingPlays] = useState(false);
   const [backendHealthy, setBackendHealthy] = useState(false);
+  const [currentJackpotCspr, setCurrentJackpotCspr] = useState<number | null>(null);
+
+  const loadCurrentJackpot = useCallback(async () => {
+    const jackpot = await fetchCurrentJackpot();
+    if (jackpot !== null) {
+      setCurrentJackpotCspr(jackpot);
+    }
+  }, []);
+
+  const integrateBackendEntries = useCallback(
+    (plays: LotteryEntry[]) => {
+      setEntries((prevEntries) => {
+        const awaitingMap = new Map(
+          prevEntries.map((entry) => [entry.requestId, entry.awaitingFulfillment])
+        );
+        const backendIds = new Set(plays.map((play) => play.requestId));
+
+        const normalized = plays.map((play) => {
+          const previousAwaiting = awaitingMap.get(play.requestId);
+          const awaiting =
+            previousAwaiting !== undefined
+              ? previousAwaiting
+              : play.status === "pending" && !play.settledDate;
+
+          return {
+            ...play,
+            awaitingFulfillment: awaiting ?? false,
+          };
+        });
+
+        const pendingLocalEntries = prevEntries.filter(
+          (entry) =>
+            !backendIds.has(entry.requestId) &&
+            entry.awaitingFulfillment === true
+        );
+
+        const merged = [...pendingLocalEntries, ...normalized];
+
+        const deduped = new Map<string, LotteryEntry>();
+        for (const entry of merged) {
+          deduped.set(entry.requestId, entry);
+        }
+
+        return Array.from(deduped.values());
+      });
+    },
+    [setEntries]
+  );
+
+  const handleFulfillment = useCallback(
+    (requestId: string) => {
+      setEntries((prevEntries) =>
+        prevEntries.map((entry) =>
+          entry.requestId === requestId
+            ? { ...entry, awaitingFulfillment: false }
+            : entry
+        )
+      );
+    },
+    [setEntries]
+  );
 
   // Check backend health on mount and get initial active account
   useEffect(() => {
     checkBackendHealth().then(setBackendHealthy);
+    void loadCurrentJackpot();
 
     // Check if wallet is already connected
     const checkInitialAccount = async () => {
@@ -189,7 +251,7 @@ export default function AppContainer() {
     };
 
     checkInitialAccount();
-  }, [clickRef]);
+  }, [clickRef, loadCurrentJackpot]);
 
   // Fetch player plays when activeAccount changes
   useEffect(() => {
@@ -218,7 +280,7 @@ export default function AppContainer() {
         if (plays.length > 0) {
           // Use real data from backend
           console.log('[AppContainer] Using real data from backend');
-          setEntries(plays);
+          integrateBackendEntries(plays);
         } else {
           // No plays found, use mock data for demo purposes
           console.log('[AppContainer] No plays found, using mock data');
@@ -229,11 +291,12 @@ export default function AppContainer() {
         setEntries(mockEntries);
       }
 
+      void loadCurrentJackpot();
       setIsLoadingPlays(false);
     };
 
     loadPlays();
-  }, [activeAccount?.public_key]);
+  }, [activeAccount?.public_key, integrateBackendEntries, loadCurrentJackpot]);
 
   // Set up wallet event listeners
   useEffect(() => {
@@ -254,7 +317,7 @@ export default function AppContainer() {
 
   const handleEntrySubmit = async (entry: LotteryEntry) => {
     // Add entry immediately to show it in UI
-    setEntries([entry, ...entries]);
+    setEntries((prevEntries) => [entry, ...prevEntries]);
 
     // If entry is awaiting fulfillment, poll backend for real request_id
     if (entry.awaitingFulfillment && entry.requestId) {
@@ -271,7 +334,12 @@ export default function AppContainer() {
         setEntries(prevEntries =>
           prevEntries.map(e =>
             e.requestId === entry.requestId
-              ? { ...e, requestId: play.request_id, playId: play.play_id }
+              ? {
+                  ...e,
+                  requestId: play.request_id,
+                  playId: play.play_id,
+                  awaitingFulfillment: true,
+                }
               : e
           )
         );
@@ -289,8 +357,9 @@ export default function AppContainer() {
         const accountHash = getAccountHash(activeAccount.public_key);
         const plays = await fetchPlayerPlays(accountHash);
         if (plays.length > 0) {
-          setEntries(plays);
+          integrateBackendEntries(plays);
         }
+        void loadCurrentJackpot();
       } catch (error) {
         console.error('[AppContainer] Error refreshing plays:', error);
       }
@@ -350,7 +419,12 @@ export default function AppContainer() {
         onConnect={handleConnectWallet}
       />
 
-      {currentPage === "landing" && <LandingPage onNavigate={handleNavigate} />}
+      {currentPage === "landing" && (
+        <LandingPage
+          onNavigate={handleNavigate}
+          currentJackpotCspr={currentJackpotCspr ?? undefined}
+        />
+      )}
 
       {currentPage === "enter" && (
         <EnterLottery
@@ -358,6 +432,7 @@ export default function AppContainer() {
           onEntrySubmit={handleEntrySubmit}
           activeAccount={activeAccount}
           onConnect={handleConnectWallet}
+          currentJackpotCspr={currentJackpotCspr ?? undefined}
         />
       )}
 
@@ -365,7 +440,10 @@ export default function AppContainer() {
         <Dashboard
           onNavigate={handleNavigate}
           entries={entries}
+          activeAccount={activeAccount}
           onWinningCelebration={handleWinningCelebration}
+          onFulfillment={handleFulfillment}
+          onRefresh={handleRefreshPlays}
         />
       )}
 
