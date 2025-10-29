@@ -12,11 +12,40 @@ import { Trophy, Shield, Zap, Users, Sparkles, Coins } from "lucide-react";
 import { CasperDrawLogo } from "./CasperDrawLogo";
 import { motion } from "framer-motion";
 import { formatNumber } from "@/lib/formatNumber";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import type { KeyboardEvent } from "react";
 
 const casperIcon = "/assets/9d94ce1715be8ece5a22234eba0aa3e300a8d738.png";
 const casperLogo = "/assets/f40f97483ee0322d9cc298a55275f180f7353db4.png";
 const autonomLogo = "/assets/8dbadf055c1ed133599dd7a54d506a1094e944af.png";
+
+const LEFT_SPARKLES = [
+  { x: 10, y: 20, color: "text-white" },
+  { x: 15, y: 60, color: "text-red-400" },
+  { x: 8, y: 80, color: "text-white" },
+  { x: 20, y: 35, color: "text-red-300" },
+  { x: 5, y: 50, color: "text-white" },
+  { x: 18, y: 15, color: "text-red-400" },
+  { x: 12, y: 70, color: "text-white" },
+  { x: 25, y: 45, color: "text-red-300" },
+  { x: 7, y: 25, color: "text-white" },
+  { x: 22, y: 85, color: "text-red-400" },
+];
+
+const RIGHT_SPARKLES = [
+  { x: 75, y: 25, color: "text-orange-400" },
+  { x: 82, y: 55, color: "text-teal-400" },
+  { x: 78, y: 75, color: "text-orange-300" },
+  { x: 88, y: 40, color: "text-teal-300" },
+  { x: 92, y: 60, color: "text-orange-400" },
+  { x: 80, y: 20, color: "text-teal-400" },
+  { x: 85, y: 80, color: "text-orange-300" },
+  { x: 70, y: 50, color: "text-teal-400" },
+  { x: 90, y: 30, color: "text-orange-400" },
+  { x: 77, y: 90, color: "text-teal-300" },
+];
+
+const SECRET_STAR_INDEX = RIGHT_SPARKLES.length - 1;
 
 interface LandingPageProps {
   onNavigate: (page: string) => void;
@@ -105,6 +134,40 @@ function AnimatedSymbol({ index }: { index: number }) {
 }
 
 export function LandingPage({ onNavigate }: LandingPageProps) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio("/assets/harry.mp3");
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleSecretStarClick = () => {
+    if (!audioRef.current) {
+      return;
+    }
+    audioRef.current.currentTime = 0;
+    void audioRef.current.play().catch(() => {
+      // Ignore autoplay rejections caused by lacking a direct gesture.
+    });
+  };
+
+  const handleSecretStarKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleSecretStarClick();
+    }
+  };
+
+  const secretStar = RIGHT_SPARKLES[SECRET_STAR_INDEX];
+  const rightBackgroundSparkles = RIGHT_SPARKLES.filter(
+    (_sparkle, index) => index !== SECRET_STAR_INDEX
+  );
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -472,18 +535,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
         {/* Static background sparkles */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Left side - White and Red sparkles */}
-          {[
-            { x: 10, y: 20, color: "text-white" },
-            { x: 15, y: 60, color: "text-red-400" },
-            { x: 8, y: 80, color: "text-white" },
-            { x: 20, y: 35, color: "text-red-300" },
-            { x: 5, y: 50, color: "text-white" },
-            { x: 18, y: 15, color: "text-red-400" },
-            { x: 12, y: 70, color: "text-white" },
-            { x: 25, y: 45, color: "text-red-300" },
-            { x: 7, y: 25, color: "text-white" },
-            { x: 22, y: 85, color: "text-red-400" },
-          ].map((pos, i) => (
+          {LEFT_SPARKLES.map((pos, i) => (
             <div
               key={`left-${i}`}
               className="absolute"
@@ -498,18 +550,7 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
           ))}
 
           {/* Right side - Orange and Teal sparkles */}
-          {[
-            { x: 75, y: 25, color: "text-orange-400" },
-            { x: 82, y: 55, color: "text-teal-400" },
-            { x: 78, y: 75, color: "text-orange-300" },
-            { x: 88, y: 40, color: "text-teal-300" },
-            { x: 92, y: 60, color: "text-orange-400" },
-            { x: 80, y: 20, color: "text-teal-400" },
-            { x: 85, y: 80, color: "text-orange-300" },
-            { x: 70, y: 50, color: "text-teal-400" },
-            { x: 90, y: 30, color: "text-orange-400" },
-            { x: 77, y: 90, color: "text-teal-300" },
-          ].map((pos, i) => (
+          {rightBackgroundSparkles.map((pos, i) => (
             <div
               key={`right-${i}`}
               className="absolute"
@@ -523,6 +564,29 @@ export function LandingPage({ onNavigate }: LandingPageProps) {
             </div>
           ))}
         </div>
+
+        {secretStar && (
+          <div
+            className="absolute pointer-events-auto"
+            style={{
+              left: `${secretStar.x}%`,
+              top: `${secretStar.y}%`,
+              zIndex: 5,
+              opacity: 0.35,
+              cursor: "default",
+            }}
+            onClick={handleSecretStarClick}
+            onKeyDown={handleSecretStarKeyDown}
+            role="button"
+            tabIndex={0}
+            aria-label="Play hidden partner audio"
+          >
+            <Sparkles
+              className={`w-6 h-6 ${secretStar.color}`}
+              style={{ opacity: 0.35 }}
+            />
+          </div>
+        )}
 
         <div className="max-w-6xl mx-auto text-center relative z-10">
           <div>

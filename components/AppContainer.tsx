@@ -7,7 +7,7 @@ import { LandingPage } from "@/components/LandingPage";
 import { EnterLottery } from "@/components/EnterLottery";
 import { Dashboard } from "@/components/Dashboard";
 import { WinningFlow } from "@/components/WinningFlow";
-import { fetchPlayerPlays, checkBackendHealth } from "@/lib/api";
+import { fetchPlayerPlays, checkBackendHealth, fetchPlayByDeployHash } from "@/lib/api";
 import { getAccountHash } from "@/lib/casper-utils";
 
 // Import the mock data and types from original App.tsx
@@ -252,8 +252,33 @@ export default function AppContainer() {
     inst?.on('csprclick:disconnected', () => setActiveAccount(null));
   }, [clickRef]);
 
-  const handleEntrySubmit = (entry: LotteryEntry) => {
+  const handleEntrySubmit = async (entry: LotteryEntry) => {
+    // Add entry immediately to show it in UI
     setEntries([entry, ...entries]);
+
+    // If entry is awaiting fulfillment, poll backend for real request_id
+    if (entry.awaitingFulfillment && entry.requestId) {
+      console.log('[AppContainer] Entry awaiting fulfillment, polling for real request_id...');
+      console.log('[AppContainer] Deploy hash:', entry.requestId);
+
+      // Poll backend in background
+      const play = await fetchPlayByDeployHash(entry.requestId);
+
+      if (play) {
+        console.log('[AppContainer] Real request_id found:', play.request_id);
+
+        // Update entry with real request_id
+        setEntries(prevEntries =>
+          prevEntries.map(e =>
+            e.requestId === entry.requestId
+              ? { ...e, requestId: play.request_id, playId: play.play_id }
+              : e
+          )
+        );
+      } else {
+        console.error('[AppContainer] Failed to fetch real request_id, keeping deploy hash');
+      }
+    }
   };
 
   const handleRefreshPlays = async () => {

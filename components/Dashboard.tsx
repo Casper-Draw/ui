@@ -51,10 +51,14 @@ function PendingEntryCard({
   isSettling: boolean;
   onSettle: () => void;
 }) {
-  // Use WebSocket hook only if entry has awaitingFulfillment flag
+  // Use WebSocket hook only if entry has awaitingFulfillment flag AND real request_id
+  // Real request_ids are short hex format: "0x21" (not long deploy hashes)
+  const isRealRequestId = entry.requestId?.startsWith('0x') && entry.requestId.length < 10;
+  const shouldEnableWebSocket = entry.awaitingFulfillment === true && isRealRequestId;
+
   const { isFulfilled, isWaiting } = useWaitForFulfillment(
     entry.requestId,
-    entry.awaitingFulfillment === true
+    shouldEnableWebSocket
   );
 
   // Show toast when fulfilled

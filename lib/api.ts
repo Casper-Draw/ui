@@ -110,6 +110,53 @@ export async function fetchPlayerPlays(
 }
 
 /**
+ * Fetch play by deploy hash (polls backend until found)
+ * Used to get real request_id after transaction
+ */
+export async function fetchPlayByDeployHash(
+  deployHash: string,
+  maxAttempts: number = 15,
+  intervalMs: number = 2000
+): Promise<BackendLotteryPlay | null> {
+  console.log(`[API] Polling for play with deploy hash: ${deployHash}`);
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      console.log(`[API] Attempt ${attempt}/${maxAttempts} to fetch play...`);
+
+      const response = await fetch(`${API_BASE_URL.replace('/api', '')}/api/play/${deployHash}`);
+
+      if (response.ok) {
+        const play: BackendLotteryPlay = await response.json();
+        console.log(`[API] Play found! request_id: ${play.request_id}`);
+        return play;
+      }
+
+      if (response.status === 404) {
+        // Not found yet, wait and retry
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, intervalMs));
+          continue;
+        }
+      } else {
+        // Other error
+        console.error(`[API] Error response: ${response.status}`);
+        return null;
+      }
+    } catch (error) {
+      console.error(`[API] Request failed:`, error);
+      if (attempt < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, intervalMs));
+        continue;
+      }
+    }
+  }
+
+  console.error(`[API] Failed to fetch play after ${maxAttempts} attempts`);
+  return null;
+}
+
+/**
  * Check if backend is healthy
  */
 export async function checkBackendHealth(): Promise<boolean> {
