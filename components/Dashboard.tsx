@@ -115,7 +115,7 @@ function PendingEntryCard({
       animate={{ opacity: 1, x: 0 }}
       className="bg-black/30 rounded-xl p-3 md:p-4 border border-cyan-500/30 hover:border-cyan-500/60 transition-colors"
     >
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4">
+      <div className="flex flex-col md:flex-row items-start gap-3 md:gap-4">
         <div className="flex-1 w-full md:w-auto">
           <div className="flex items-center gap-1 md:gap-2 mb-2 flex-wrap">
             <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
@@ -162,14 +162,14 @@ function PendingEntryCard({
             </div>
           </div>
         </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
+        <div className="md:self-start w-full md:w-auto flex md:justify-end">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button
                   onClick={onSettle}
                   disabled={isButtonDisabled}
-                  className="bg-neon-pink hover:bg-neon-pink/90 text-white hover:scale-105 transition-transform cursor-pointer w-full md:w-auto text-base md:text-lg whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-neon-pink hover:bg-neon-pink/90 text-white hover:scale-105 transition-transform cursor-pointer w-full md:w-auto text-base md:text-lg whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed rounded-xl px-5 py-2"
                 >
                   {isSettling ? (
                     <>
@@ -189,15 +189,15 @@ function PendingEntryCard({
                     <>Check Results</>
                   )}
                 </Button>
-              </div>
-            </TooltipTrigger>
-            {tooltipMessage && (
-              <TooltipContent>
-                <p>{tooltipMessage}</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
+              </TooltipTrigger>
+              {tooltipMessage && (
+                <TooltipContent>
+                  <p>{tooltipMessage}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
     </motion.div>
   );
@@ -488,36 +488,20 @@ export function Dashboard({
             transition={{ delay: 0.4 }}
             className="h-full"
           >
-            <Card
-              className={`bg-black/40 border-2 ${
-                netProfit >= 0
-                  ? "border-green-500/50 neon-glow-green"
-                  : "border-red-500/50 neon-glow-pink"
-              } h-full flex flex-col`}
-            >
+            <Card className={`bg-black/40 border-2 border-green-500/50 neon-glow-green h-full flex flex-col`}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base md:text-lg text-white">
                   Net Profit (CSPR)
                 </CardTitle>
-                <TrendingUp
-                  className={`w-5 h-5 md:w-6 md:h-6 ${
-                    netProfit >= 0 ? "text-green-400" : "text-red-400"
-                  }`}
-                />
+                <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-green-400" />
               </CardHeader>
               <CardContent className="flex-1 flex flex-col justify-between">
-                <div
-                  className={`text-4xl md:text-6xl ${
-                    netProfit >= 0
-                      ? "text-green-400 neon-text-green"
-                      : "text-red-400"
-                  } whitespace-nowrap`}
-                >
-                  {netProfit > 0 ? "+" : netProfit < 0 ? "-" : ""}
-                  {formatNumber(Math.abs(netProfit))}
+                <div className="text-4xl md:text-6xl text-green-400 neon-text-green whitespace-nowrap">
+                  {netProfit > 0 ? "+" : ""}
+                  {formatNumber(netProfit > 0 ? netProfit : 0)}
                 </div>
                 <p className="text-sm md:text-base mt-1 text-white">
-                  {netProfit >= 0 ? "You're winning! 🚀" : "Keep playing! 💪"}
+                  {netProfit > 0 ? "You're winning! 🚀" : "Keep playing! 💪"}
                 </p>
               </CardContent>
             </Card>
