@@ -57,7 +57,7 @@ function PendingEntryCard({
   const isRealRequestId = entry.requestId?.startsWith('0x') && entry.requestId.length < 10;
   const shouldEnableWebSocket = entry.awaitingFulfillment === true && isRealRequestId;
 
-  const { isFulfilled, isWaiting } = useWaitForFulfillment(
+  const { isFulfilled, isWaiting, isTimedOut } = useWaitForFulfillment(
     entry.requestId,
     shouldEnableWebSocket
   );
@@ -86,6 +86,14 @@ function PendingEntryCard({
     }
   }, [isFulfilled, entry.requestId, onFulfillment]);
 
+  // Fallback: if websocket times out (missed event), mark as ready to settle
+  useEffect(() => {
+    if (isTimedOut && entry.awaitingFulfillment && !hasNotifiedRef.current) {
+      hasNotifiedRef.current = true;
+      onFulfillment?.(entry.requestId);
+    }
+  }, [isTimedOut, entry.awaitingFulfillment, entry.requestId, onFulfillment]);
+
   const awaitingFulfillment = entry.awaitingFulfillment === true;
   const isButtonDisabled = isSettling || awaitingFulfillment || isWaiting;
   const statusBadgeClass = awaitingFulfillment
@@ -97,6 +105,9 @@ function PendingEntryCard({
     }
     if (awaitingFulfillment || isWaiting) {
       return "Randomness not ready yet. Please wait for fulfillment.";
+    }
+    if (isTimedOut) {
+      return "Connection timed out. Try checking results.";
     }
     return undefined;
   })();
