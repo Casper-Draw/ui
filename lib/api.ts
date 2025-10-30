@@ -56,6 +56,43 @@ function motesToCspr(motes: string | number | bigint | null | undefined): number
   }
 }
 
+function normalizePayoutMotes(play: BackendLotteryPlay): string | undefined {
+  const toBigInt = (value: string | number | bigint | null | undefined): bigint | null => {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    try {
+      if (typeof value === 'bigint') {
+        return value;
+      }
+      const parsed = typeof value === 'number' ? BigInt(value) : BigInt(value);
+      return parsed;
+    } catch (error) {
+      console.warn('[API] Failed to parse payout motes:', value, error);
+      return null;
+    }
+  };
+
+  if (play.is_jackpot) {
+    const jackpot = toBigInt(play.jackpot_amount);
+    if (jackpot !== null && jackpot > 0n) {
+      return jackpot.toString();
+    }
+
+    const prize = toBigInt(play.prize_amount);
+    if (prize !== null && prize > 0n) {
+      return prize.toString();
+    }
+
+    return undefined;
+  }
+
+  const consolation = toBigInt(play.prize_amount);
+  return consolation !== null && consolation > 0n
+    ? consolation.toString()
+    : undefined;
+}
+
 /**
  * Convert backend play to frontend LotteryEntry
  */
@@ -67,12 +104,14 @@ export function backendPlayToEntry(play: BackendLotteryPlay, ticketCost: number 
     status = 'pending';
   } else {
     // Settled
+    const payoutMotes = normalizePayoutMotes(play);
+
     if (play.is_jackpot) {
       status = 'won-jackpot';
-      prizeAmount = play.jackpot_amount ? motesToCspr(play.jackpot_amount) : undefined;
-    } else if (play.prize_amount && parseInt(play.prize_amount) > 0) {
+      prizeAmount = payoutMotes ? motesToCspr(payoutMotes) : undefined;
+    } else if (payoutMotes) {
       status = 'won-consolation';
-      prizeAmount = motesToCspr(play.prize_amount);
+      prizeAmount = motesToCspr(payoutMotes);
     } else {
       status = 'lost';
     }
@@ -197,10 +236,16 @@ export interface LotteryCurrentState {
   } | null;
 }
 
+export interface LotterySnapshot {
+  jackpotCspr: number | null;
+  roundId: number | null;
+  totalPlays: number | null;
+}
+
 /**
  * Fetch the current lottery state (jackpot, round info, etc.)
  */
-export async function fetchCurrentJackpot(): Promise<number | null> {
+export async function fetchCurrentJackpot(): Promise<LotterySnapshot | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/lottery/current`);
     if (!response.ok) {
@@ -212,7 +257,16 @@ export async function fetchCurrentJackpot(): Promise<number | null> {
     const data: LotteryCurrentState = await response.json();
     const rawJackpot = data?.stats?.current_jackpot ?? data?.round?.final_jackpot ?? 0;
     const jackpotCspr = motesToCspr(rawJackpot);
-    return Number.isFinite(jackpotCspr) ? jackpotCspr : null;
+    const roundId =
+      typeof data?.round?.round_id === 'number' ? data.round.round_id : null;
+    const totalPlays =
+      typeof data?.round?.total_plays === 'number' ? data.round.total_plays : null;
+
+    return {
+      jackpotCspr: Number.isFinite(jackpotCspr) ? jackpotCspr : null,
+      roundId,
+      totalPlays,
+    };
   } catch (error) {
     console.error('[API] Error fetching current jackpot:', error);
     return null;

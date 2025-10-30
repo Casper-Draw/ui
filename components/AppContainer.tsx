@@ -1,13 +1,27 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useClickRef } from "@make-software/csprclick-ui";
 import { Header } from "@/components/Header";
 import { LandingPage } from "@/components/LandingPage";
 import { EnterLottery } from "@/components/EnterLottery";
 import { Dashboard } from "@/components/Dashboard";
-import { WinningFlow } from "@/components/WinningFlow";
-import { fetchPlayerPlays, checkBackendHealth, fetchPlayByDeployHash, fetchCurrentJackpot } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { motion } from "framer-motion";
+import {
+  fetchPlayerPlays,
+  checkBackendHealth,
+  fetchPlayByDeployHash,
+  fetchCurrentJackpot,
+  backendPlayToEntry,
+} from "@/lib/api";
+import { formatNumber } from "@/lib/formatNumber";
 import { getAccountHash } from "@/lib/casper-utils";
 
 // Import the mock data and types from original App.tsx
@@ -35,6 +49,8 @@ interface WinningState {
 // Copy mockEntries array from ui/src/App.tsx
 // Use a static base timestamp to avoid hydration mismatches
 const BASE_TIME = new Date("2025-10-22T12:00:00.000Z").getTime();
+
+const jackpotGif = "/assets/69bb9862d8d20b48acde1b9ff6c23cc9a1a6af67.png";
 
 const mockEntries: LotteryEntry[] = [
   // Pending entries (just over 1 minute old - ready to settle)
@@ -164,11 +180,50 @@ export default function AppContainer() {
   const [isLoadingPlays, setIsLoadingPlays] = useState(false);
   const [backendHealthy, setBackendHealthy] = useState(false);
   const [currentJackpotCspr, setCurrentJackpotCspr] = useState<number | null>(null);
+  const [currentRoundId, setCurrentRoundId] = useState<number | null>(null);
+  const [nextPlayIdHint, setNextPlayIdHint] = useState<string | null>(null);
+  const liveRequestIdsRef = useRef<Set<string>>(new Set());
+
+  const setNextPlayIdFromPlayId = (playId: string | undefined) => {
+    if (!playId) {
+      return;
+    }
+    try {
+      const current = playId.startsWith("0x") ? BigInt(playId) : BigInt(playId);
+      setNextPlayIdHint(`0x${(current + 1n).toString(16)}`);
+    } catch (error) {
+      console.warn('[AppContainer] Failed to compute next play id from play identifier:', playId, error);
+    }
+  };
+
+  const winningEntry = winningState.entry;
+  const isJackpotWin =
+    winningState.show && winningEntry?.status === "won-jackpot";
+  const isConsolationWin =
+    winningState.show && winningEntry?.status === "won-consolation";
+  const winningPrizeAmount = winningEntry?.prizeAmount ?? 0;
+  const winningRoundId = winningEntry?.roundId ?? 1;
+  const backendStatusAttr = backendHealthy ? "online" : "offline";
 
   const loadCurrentJackpot = useCallback(async () => {
-    const jackpot = await fetchCurrentJackpot();
-    if (jackpot !== null) {
-      setCurrentJackpotCspr(jackpot);
+    const snapshot = await fetchCurrentJackpot();
+    if (!snapshot) {
+      return;
+    }
+
+    if (snapshot.jackpotCspr !== null) {
+      setCurrentJackpotCspr(snapshot.jackpotCspr);
+    }
+    if (snapshot.roundId !== null) {
+      setCurrentRoundId(snapshot.roundId);
+    }
+    if (snapshot.totalPlays !== null && !Number.isNaN(snapshot.totalPlays)) {
+      try {
+        const next = BigInt(snapshot.totalPlays) + 1n;
+        setNextPlayIdHint(`0x${next.toString(16)}`);
+      } catch (error) {
+        console.warn('[AppContainer] Failed to compute next play id from snapshot:', snapshot.totalPlays, error);
+      }
     }
   }, []);
 
@@ -182,10 +237,13 @@ export default function AppContainer() {
 
         const normalized = plays.map((play) => {
           const previousAwaiting = awaitingMap.get(play.requestId);
+          if (play.status !== "pending") {
+            liveRequestIdsRef.current.delete(play.requestId);
+          }
           const awaiting =
             previousAwaiting !== undefined
               ? previousAwaiting
-              : play.status === "pending" && !play.settledDate;
+              : liveRequestIdsRef.current.has(play.requestId);
 
           return {
             ...play,
@@ -221,6 +279,7 @@ export default function AppContainer() {
             : entry
         )
       );
+      liveRequestIdsRef.current.delete(requestId);
     },
     [setEntries]
   );
@@ -233,8 +292,9 @@ export default function AppContainer() {
     // Check if wallet is already connected
     const checkInitialAccount = async () => {
       try {
-        const inst = (typeof window !== 'undefined' ? window.csprclick : undefined) ||
-          (clickRef as any);
+        const inst =
+          (typeof window !== "undefined" ? window.csprclick : undefined) ||
+          (clickRef as unknown as CsprClick | undefined);
 
         if (inst && typeof inst.getActivePublicKey === 'function') {
           const publicKey = await inst.getActivePublicKey();
@@ -316,33 +376,79 @@ export default function AppContainer() {
   }, [clickRef]);
 
   const handleEntrySubmit = async (entry: LotteryEntry) => {
+    const optimisticEntry: LotteryEntry = {
+      ...entry,
+      roundId: entry.roundId ?? currentRoundId ?? 1,
+      playId: entry.playId ?? nextPlayIdHint ?? "pending",
+    };
+
     // Add entry immediately to show it in UI
-    setEntries((prevEntries) => [entry, ...prevEntries]);
+    setEntries((prevEntries) => [optimisticEntry, ...prevEntries]);
+    liveRequestIdsRef.current.add(optimisticEntry.requestId);
+
+    if (
+      optimisticEntry.roundId &&
+      (!currentRoundId || optimisticEntry.roundId > currentRoundId)
+    ) {
+      setCurrentRoundId(optimisticEntry.roundId);
+    }
 
     // If entry is awaiting fulfillment, poll backend for real request_id
-    if (entry.awaitingFulfillment && entry.requestId) {
+    if (optimisticEntry.awaitingFulfillment && optimisticEntry.requestId) {
       console.log('[AppContainer] Entry awaiting fulfillment, polling for real request_id...');
-      console.log('[AppContainer] Deploy hash:', entry.requestId);
+      console.log('[AppContainer] Deploy hash:', optimisticEntry.requestId);
 
       // Poll backend in background
-      const play = await fetchPlayByDeployHash(entry.requestId);
+      const play = await fetchPlayByDeployHash(optimisticEntry.requestId);
 
       if (play) {
         console.log('[AppContainer] Real request_id found:', play.request_id);
 
-        // Update entry with real request_id
-        setEntries(prevEntries =>
-          prevEntries.map(e =>
-            e.requestId === entry.requestId
-              ? {
-                  ...e,
-                  requestId: play.request_id,
-                  playId: play.play_id,
-                  awaitingFulfillment: true,
-                }
-              : e
-          )
-        );
+        const normalizedEntry = backendPlayToEntry(play, optimisticEntry.cost);
+        const awaitingFlag =
+          optimisticEntry.awaitingFulfillment ??
+          normalizedEntry.status === "pending";
+
+        liveRequestIdsRef.current.delete(optimisticEntry.requestId);
+        if (awaitingFlag) {
+          liveRequestIdsRef.current.add(play.request_id);
+        }
+
+        setEntries((prevEntries) => {
+          let found = false;
+          const updated = prevEntries.map((existing) => {
+            if (
+              existing.requestId === optimisticEntry.requestId ||
+              existing.requestId === play.request_id
+            ) {
+              found = true;
+              return {
+                ...normalizedEntry,
+                awaitingFulfillment: awaitingFlag,
+              };
+            }
+            return existing;
+          });
+
+          if (!found) {
+            return [
+              {
+                ...normalizedEntry,
+                awaitingFulfillment: awaitingFlag,
+              },
+              ...updated,
+            ];
+          }
+
+          return updated;
+        });
+
+        if (normalizedEntry.roundId) {
+          setCurrentRoundId((prev) =>
+            !prev || normalizedEntry.roundId > prev ? normalizedEntry.roundId : prev
+          );
+        }
+        setNextPlayIdFromPlayId(normalizedEntry.playId);
       } else {
         console.error('[AppContainer] Failed to fetch real request_id, keeping deploy hash');
       }
@@ -379,6 +485,13 @@ export default function AppContainer() {
   };
 
   const handleWinningCelebration = (entry: LotteryEntry) => {
+    if (
+      entry.status !== "won-jackpot" &&
+      entry.status !== "won-consolation"
+    ) {
+      return;
+    }
+
     setEntries((prevEntries) =>
       prevEntries.map((e) => (e.requestId === entry.requestId ? entry : e))
     );
@@ -410,8 +523,60 @@ export default function AppContainer() {
     }, 0);
   };
 
+  useEffect(() => {
+    if (entries.length === 0) {
+      return;
+    }
+
+    const latestRound = entries.reduce((max, entry) => {
+      return entry.roundId > max ? entry.roundId : max;
+    }, 0);
+
+    if (latestRound > 0) {
+      setCurrentRoundId((prev) => (!prev || latestRound > prev ? latestRound : prev));
+    }
+
+    for (const entry of entries) {
+      if (entry.status !== "pending") {
+        liveRequestIdsRef.current.delete(entry.requestId);
+      }
+    }
+
+    const entriesInLatestRound = entries.filter(
+      (entry) => entry.roundId === latestRound
+    );
+
+    let maxPlayId: bigint | null = null;
+    for (const entry of entriesInLatestRound) {
+      if (entry.status !== "pending") {
+        liveRequestIdsRef.current.delete(entry.requestId);
+      }
+      if (!entry.playId) {
+        continue;
+      }
+      try {
+        const playValue = entry.playId.startsWith("0x")
+          ? BigInt(entry.playId)
+          : BigInt(entry.playId);
+        if (maxPlayId === null || playValue > maxPlayId) {
+          maxPlayId = playValue;
+        }
+      } catch {
+        // Ignore malformed play identifiers
+      }
+    }
+
+    if (maxPlayId !== null) {
+      setNextPlayIdHint(`0x${(maxPlayId + 1n).toString(16)}`);
+    }
+  }, [entries]);
+
   return (
-    <div className="min-h-screen">
+    <div
+      className="min-h-screen"
+      data-backend={backendStatusAttr}
+      data-loading={isLoadingPlays ? "true" : "false"}
+    >
       <Header
         currentPage={currentPage}
         onNavigate={handleNavigate}
@@ -433,6 +598,8 @@ export default function AppContainer() {
           activeAccount={activeAccount}
           onConnect={handleConnectWallet}
           currentJackpotCspr={currentJackpotCspr ?? undefined}
+          currentRoundId={currentRoundId ?? undefined}
+          nextPlayIdHint={nextPlayIdHint ?? undefined}
         />
       )}
 
@@ -447,12 +614,238 @@ export default function AppContainer() {
         />
       )}
 
-      {winningState.show && winningState.entry && (
-        <WinningFlow
-          entry={winningState.entry}
-          onClose={handleCloseWinningFlow}
-        />
-      )}
+      <Dialog
+        open={isJackpotWin}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseWinningFlow();
+          }
+        }}
+        modal
+      >
+        <DialogContent
+          className="bg-black/95 border-4 border-yellow-500 backdrop-blur-xl rounded-3xl max-h-[95vh] overflow-y-auto modal-jackpot-size jackpot-box-glow-intense"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogTitle className="sr-only">Jackpot Winner</DialogTitle>
+          <DialogDescription className="sr-only">
+            Congratulations! You won the jackpot prize of{" "}
+            {formatNumber(winningPrizeAmount)} CSPR.
+          </DialogDescription>
+          <div className="text-center py-8 md:py-6 px-4 md:px-8">
+            <div className="mb-6 md:mb-4">
+              <h2 className="block md:hidden text-yellow-300 leading-tight text-[36px] jackpot-text-glow-intense">
+                💎 YOU WON 💎
+                <br />
+                THE JACKPOT!
+              </h2>
+              <h2 className="hidden md:block text-yellow-300 text-[64px] jackpot-text-glow-intense">
+                💎 YOU WON THE JACKPOT! 💎
+              </h2>
+            </div>
+
+            <div className="flex justify-center items-center gap-3 md:gap-8 mb-6 md:mb-4">
+              <img
+                src={jackpotGif}
+                alt="Jackpot"
+                className="w-16 h-16 md:w-32 lg:w-64 md:h-32 lg:h-64 object-contain jackpot-filter-glow"
+              />
+
+              <div className="flex justify-center items-center w-20 h-20 md:w-40 lg:w-64 md:h-40 lg:h-64">
+                <svg
+                  className="w-full h-full"
+                  viewBox="0 0 200 200"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="87.5"
+                    fill="url(#jackpotGradient1)"
+                    stroke="#FCD34D"
+                    strokeWidth="7.5"
+                  />
+                  <circle
+                    cx="100"
+                    cy="100"
+                    r="70"
+                    fill="url(#jackpotGradient2)"
+                    stroke="#FCD34D"
+                    strokeWidth="5"
+                  />
+                  <text
+                    x="100"
+                    y="125"
+                    textAnchor="middle"
+                    fill="#FCD34D"
+                    fontSize="70"
+                    fontWeight="bold"
+                  >
+                    {winningRoundId}
+                  </text>
+                  <defs>
+                    <linearGradient
+                      id="jackpotGradient1"
+                      x1="100"
+                      y1="12.5"
+                      x2="100"
+                      y2="187.5"
+                    >
+                      <stop offset="0%" stopColor="#B45309" />
+                      <stop offset="100%" stopColor="#78350F" />
+                    </linearGradient>
+                    <linearGradient
+                      id="jackpotGradient2"
+                      x1="100"
+                      y1="30"
+                      x2="100"
+                      y2="170"
+                    >
+                      <stop offset="0%" stopColor="#92400E" />
+                      <stop offset="100%" stopColor="#451A03" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+
+              <img
+                src={jackpotGif}
+                alt="Jackpot"
+                className="w-16 h-16 md:w-32 lg:w-64 md:h-32 lg:h-64 object-contain jackpot-filter-glow"
+              />
+            </div>
+
+            <p className="text-white mb-4 text-4xl md:text-[32px] font-bold">
+              You won
+            </p>
+
+            <motion.div
+              className="text-7xl md:text-8xl text-yellow-300 neon-text-yellow mb-6 md:mb-6"
+              animate={{
+                filter: [
+                  "drop-shadow(0 0 10px rgba(253, 224, 71, 0.2)) drop-shadow(0 0 20px rgba(253, 224, 71, 0.2))",
+                  "drop-shadow(0 0 30px rgba(253, 224, 71, 1)) drop-shadow(0 0 60px rgba(253, 224, 71, 1))",
+                  "drop-shadow(0 0 30px rgba(253, 224, 71, 1)) drop-shadow(0 0 60px rgba(253, 224, 71, 1))",
+                  "drop-shadow(0 0 10px rgba(253, 224, 71, 0.2)) drop-shadow(0 0 20px rgba(253, 224, 71, 0.2))",
+                ],
+              }}
+              transition={{
+                duration: 5,
+                times: [0, 0.4, 0.8, 1],
+                repeat: Infinity,
+              }}
+            >
+              {formatNumber(winningPrizeAmount)} CSPR
+            </motion.div>
+
+            <Button
+              onClick={handleCloseWinningFlow}
+              className="bg-gradient-to-r from-neon-pink to-pink-600 hover:opacity-90 text-white px-6 md:px-8 py-4 md:py-6 cursor-pointer w-full md:w-auto"
+            >
+              Claim Prize
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isConsolationWin}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseWinningFlow();
+          }
+        }}
+        modal
+      >
+        <DialogContent
+          className="bg-black/95 border-4 border-yellow-500 backdrop-blur-xl rounded-3xl modal-consolation-size jackpot-box-glow-medium"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogTitle className="sr-only">
+            Consolation Prize Winner
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Congratulations! You won a consolation prize of{" "}
+            {formatNumber(winningPrizeAmount)} CSPR.
+          </DialogDescription>
+          <div className="text-center py-4 md:py-8 px-2 md:px-4">
+            <div className="flex justify-center mb-3 md:mb-6">
+              <svg
+                width="60"
+                height="60"
+                viewBox="0 0 80 80"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className="md:w-20 md:h-20"
+              >
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="35"
+                  fill="url(#gradient1)"
+                  stroke="#00FFFF"
+                  strokeWidth="3"
+                />
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="28"
+                  fill="url(#gradient2)"
+                  stroke="#00FFFF"
+                  strokeWidth="2"
+                />
+                <text
+                  x="40"
+                  y="50"
+                  textAnchor="middle"
+                  fill="#00FFFF"
+                  fontSize="28"
+                  fontWeight="bold"
+                >
+                  {winningRoundId}
+                </text>
+                <defs>
+                  <linearGradient id="gradient1" x1="40" y1="5" x2="40" y2="75">
+                    <stop offset="0%" stopColor="#006666" />
+                    <stop offset="100%" stopColor="#003333" />
+                  </linearGradient>
+                  <linearGradient
+                    id="gradient2"
+                    x1="40"
+                    y1="12"
+                    x2="40"
+                    y2="68"
+                  >
+                    <stop offset="0%" stopColor="#004444" />
+                    <stop offset="100%" stopColor="#002222" />
+                  </linearGradient>
+                </defs>
+              </svg>
+            </div>
+
+            <h2 className="text-cyan-300 neon-text-cyan mb-1 md:mb-2 text-3xl md:text-6xl">
+              🎉 YOU WON! 🎉
+            </h2>
+            <p className="text-white mb-4 md:mb-6">Consolation Prize</p>
+
+            <div className="text-yellow-300 mb-4 md:mb-8 text-5xl md:text-6xl jackpot-text-glow-intense">
+              {formatNumber(winningPrizeAmount)} CSPR
+            </div>
+
+            <p className="text-white text-base md:text-xl mb-4 md:mb-8 px-2">
+              Nice win! Better luck next time for the jackpot! 💰
+            </p>
+
+            <Button
+              onClick={handleCloseWinningFlow}
+              className="bg-gradient-to-r from-neon-pink to-pink-600 hover:opacity-90 text-white px-6 md:px-8 py-4 md:py-6 cursor-pointer w-full md:w-auto"
+            >
+              Claim Prize
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

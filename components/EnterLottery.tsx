@@ -49,9 +49,19 @@ interface EnterLotteryProps {
   activeAccount: CasperAccount | null;
   onConnect: () => void;
   currentJackpotCspr?: number;
+  currentRoundId?: number | null;
+  nextPlayIdHint?: string | null;
 }
 
-export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConnect, currentJackpotCspr }: EnterLotteryProps) {
+export function EnterLottery({
+  onNavigate,
+  onEntrySubmit,
+  activeAccount,
+  onConnect,
+  currentJackpotCspr,
+  currentRoundId,
+  nextPlayIdHint,
+}: EnterLotteryProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentDeployHash, setCurrentDeployHash] = useState<string | null>(null);
 
@@ -66,8 +76,8 @@ export function EnterLottery({ onNavigate, onEntrySubmit, activeAccount, onConne
   const jackpotProbability = 10; // TODO: Query from contract
   const consolationProbability = 25; // TODO: Query from contract
   const maxConsolationPrize = 50; // TODO: Query from contract
-  const currentRound = 1; // TODO: Query from contract
-  const currentPlayId = 1; // TODO: Query from contract
+  const currentRound = currentRoundId ?? 1;
+  const currentPlayId = nextPlayIdHint ?? "0x??";
 
   const handleBuyTicket = async () => {
     if (!activeAccount) {

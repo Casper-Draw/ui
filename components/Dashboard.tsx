@@ -12,12 +12,6 @@ import {
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "./ui/dialog";
-import {
   Ticket,
   Trophy,
   DollarSign,
@@ -45,8 +39,6 @@ import {
   TooltipTrigger,
 } from "./ui/tooltip";
 import { PublicKey } from "casper-js-sdk";
-
-const jackpotGif = "/assets/69bb9862d8d20b48acde1b9ff6c23cc9a1a6af67.png";
 
 // Component for handling individual pending entry with WebSocket
 function PendingEntryCard({
@@ -232,18 +224,16 @@ export function Dashboard({
   onNavigate,
   entries,
   activeAccount,
+  onWinningCelebration,
   onFulfillment,
   onRefresh,
 }: DashboardProps) {
   const [settlingRequests, setSettlingRequests] = useState<Set<string>>(
     new Set()
   );
-  const [showJackpotModal, setShowJackpotModal] = useState(false);
-  const [jackpotPrizeAmount, setJackpotPrizeAmount] = useState(0);
-  const [jackpotEntry, setJackpotEntry] = useState<LotteryEntry | null>(null);
-  const [showConsolationModal, setShowConsolationModal] = useState(false);
-  const [consolationEntry, setConsolationEntry] = useState<LotteryEntry | null>(
-    null
+  const hasInitializedEntriesRef = useRef(false);
+  const previousStatusesRef = useRef<Map<string, LotteryEntry["status"]>>(
+    new Map()
   );
 
   // Separate entries by status
@@ -260,6 +250,28 @@ export function Dashboard({
   );
   const totalSpent = entries.reduce((sum, entry) => sum + entry.cost, 0);
   const netProfit = totalWon - totalSpent;
+
+  useEffect(() => {
+    if (!hasInitializedEntriesRef.current) {
+      entries.forEach((entry) => {
+        previousStatusesRef.current.set(entry.requestId, entry.status);
+      });
+      hasInitializedEntriesRef.current = true;
+      return;
+    }
+
+    entries.forEach((entry) => {
+      const previousStatus = previousStatusesRef.current.get(entry.requestId);
+      const isWinningStatus =
+        entry.status === "won-jackpot" || entry.status === "won-consolation";
+
+      if (isWinningStatus && previousStatus !== entry.status) {
+        onWinningCelebration?.(entry);
+      }
+
+      previousStatusesRef.current.set(entry.requestId, entry.status);
+    });
+  }, [entries, onWinningCelebration]);
 
   const handleSettle = async (entry: LotteryEntry) => {
     if (entry.awaitingFulfillment) {
@@ -686,261 +698,6 @@ export function Dashboard({
         </Tabs>
       </div>
 
-      {/* Jackpot Modal */}
-      <Dialog open={showJackpotModal} onOpenChange={setShowJackpotModal} modal>
-        <DialogContent
-          className="bg-black/95 border-4 border-yellow-500 backdrop-blur-xl rounded-3xl max-h-[95vh] overflow-y-auto modal-jackpot-size jackpot-box-glow-intense"
-          onInteractOutside={(e) => e.preventDefault()}
-        >
-          <DialogTitle className="sr-only">Jackpot Winner</DialogTitle>
-          <DialogDescription className="sr-only">
-            Congratulations! You won the jackpot prize.
-          </DialogDescription>
-          <div className="text-center py-8 md:py-6 px-4 md:px-8">
-            {/* Title with intense glow - Mobile: 2 lines, Desktop: 1 line */}
-            <div className="mb-6 md:mb-4">
-              {/* Mobile version - 2 lines */}
-              <h2 className="block md:hidden text-yellow-300 leading-tight text-[36px] jackpot-text-glow-intense">
-                💎 YOU WON 💎
-                <br />
-                THE JACKPOT!
-              </h2>
-
-              {/* Desktop version - 1 line */}
-              <h2 className="hidden md:block text-yellow-300 text-[64px] jackpot-text-glow-intense">
-                💎 YOU WON THE JACKPOT! 💎
-              </h2>
-            </div>
-
-            {/* Jackpot Icons - 2 coins with golden round ID coin in middle */}
-            <div className="flex justify-center items-center gap-3 md:gap-8 mb-6 md:mb-4">
-              {/* All 3 icons visible on all screens */}
-              <img
-                src={jackpotGif}
-                alt="Jackpot"
-                className="w-16 h-16 md:w-32 lg:w-64 md:h-32 lg:h-64 object-contain jackpot-filter-glow"
-                // animate={{
-                //   scale: [1, 1.1, 1],
-                //   rotate: [0, 5, -5, 0],
-                // }}
-                // transition={{
-                //   duration: 3,
-                //   repeat: Infinity,
-                //   ease: "easeInOut",
-                // }}
-              />
-
-              {/* Golden Round ID Coin - Always visible */}
-              <div className="flex justify-center items-center w-20 h-20 md:w-40 lg:w-64 md:h-40 lg:h-64">
-                <svg
-                  className="w-full h-full"
-                  viewBox="0 0 200 200"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle
-                    cx="100"
-                    cy="100"
-                    r="87.5"
-                    fill="url(#jackpotGradient1)"
-                    stroke="#FCD34D"
-                    strokeWidth="7.5"
-                  />
-                  <circle
-                    cx="100"
-                    cy="100"
-                    r="70"
-                    fill="url(#jackpotGradient2)"
-                    stroke="#FCD34D"
-                    strokeWidth="5"
-                  />
-                  <text
-                    x="100"
-                    y="125"
-                    textAnchor="middle"
-                    fill="#FCD34D"
-                    fontSize="70"
-                    fontWeight="bold"
-                  >
-                    {jackpotEntry?.roundId || 1}
-                  </text>
-                  <defs>
-                    <linearGradient
-                      id="jackpotGradient1"
-                      x1="100"
-                      y1="12.5"
-                      x2="100"
-                      y2="187.5"
-                    >
-                      <stop offset="0%" stopColor="#B45309" />
-                      <stop offset="100%" stopColor="#78350F" />
-                    </linearGradient>
-                    <linearGradient
-                      id="jackpotGradient2"
-                      x1="100"
-                      y1="30"
-                      x2="100"
-                      y2="170"
-                    >
-                      <stop offset="0%" stopColor="#92400E" />
-                      <stop offset="100%" stopColor="#451A03" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-
-              <img
-                src={jackpotGif}
-                alt="Jackpot"
-                className="w-16 h-16 md:w-32 lg:w-64 md:h-32 lg:h-64 object-contain jackpot-filter-glow"
-                // animate={{
-                //   scale: [1, 1.1, 1],
-                //   rotate: [0, 5, -5, 0],
-                // }}
-                // transition={{
-                //   duration: 3,
-                //   repeat: Infinity,
-                //   ease: "easeInOut",
-                //   delay: 0.4,
-                // }}
-              />
-            </div>
-
-            {/* "You won" text */}
-            <p className="text-white mb-4 text-4xl md:text-[32px] font-bold">
-              You won
-            </p>
-
-            {/* Prize Amount with EXACT RADIATING GLOW from landing page */}
-            <motion.div
-              className="text-7xl md:text-8xl text-yellow-300 neon-text-yellow mb-6 md:mb-6"
-              animate={{
-                filter: [
-                  "drop-shadow(0 0 10px rgba(253, 224, 71, 0.2)) drop-shadow(0 0 20px rgba(253, 224, 71, 0.2))",
-                  "drop-shadow(0 0 30px rgba(253, 224, 71, 1)) drop-shadow(0 0 60px rgba(253, 224, 71, 1))",
-                  "drop-shadow(0 0 30px rgba(253, 224, 71, 1)) drop-shadow(0 0 60px rgba(253, 224, 71, 1))",
-                  "drop-shadow(0 0 10px rgba(253, 224, 71, 0.2)) drop-shadow(0 0 20px rgba(253, 224, 71, 0.2))",
-                ],
-              }}
-              transition={{
-                duration: 5,
-                times: [0, 0.4, 0.8, 1],
-                repeat: Infinity,
-              }}
-            >
-              {formatNumber(jackpotPrizeAmount)} CSPR
-            </motion.div>
-
-            {/* Claim Prize Button */}
-            <Button
-              onClick={() => setShowJackpotModal(false)}
-              className="bg-gradient-to-r from-neon-pink to-pink-600 hover:opacity-90 text-white px-6 md:px-8 py-4 md:py-6 cursor-pointer w-full md:w-auto"
-            >
-              Claim Prize
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Consolation Prize Modal */}
-      <Dialog
-        open={showConsolationModal}
-        onOpenChange={setShowConsolationModal}
-        modal
-      >
-        <DialogContent
-          className="bg-black/95 border-4 border-yellow-500 backdrop-blur-xl rounded-3xl modal-consolation-size jackpot-box-glow-medium"
-          onInteractOutside={(e) => e.preventDefault()}
-        >
-          <DialogTitle className="sr-only">
-            Consolation Prize Winner
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Congratulations! You won a consolation prize of{" "}
-            {formatNumber(consolationEntry?.prizeAmount || 0)} CSPR.
-          </DialogDescription>
-          <div className="text-center py-4 md:py-8 px-2 md:px-4">
-            {/* Coin Icon */}
-            <div className="flex justify-center mb-3 md:mb-6">
-              <svg
-                width="60"
-                height="60"
-                viewBox="0 0 80 80"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="md:w-20 md:h-20"
-              >
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="35"
-                  fill="url(#gradient1)"
-                  stroke="#00FFFF"
-                  strokeWidth="3"
-                />
-                <circle
-                  cx="40"
-                  cy="40"
-                  r="28"
-                  fill="url(#gradient2)"
-                  stroke="#00FFFF"
-                  strokeWidth="2"
-                />
-                <text
-                  x="40"
-                  y="50"
-                  textAnchor="middle"
-                  fill="#00FFFF"
-                  fontSize="28"
-                  fontWeight="bold"
-                >
-                  {consolationEntry?.roundId || 1}
-                </text>
-                <defs>
-                  <linearGradient id="gradient1" x1="40" y1="5" x2="40" y2="75">
-                    <stop offset="0%" stopColor="#006666" />
-                    <stop offset="100%" stopColor="#003333" />
-                  </linearGradient>
-                  <linearGradient
-                    id="gradient2"
-                    x1="40"
-                    y1="12"
-                    x2="40"
-                    y2="68"
-                  >
-                    <stop offset="0%" stopColor="#004444" />
-                    <stop offset="100%" stopColor="#002222" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-
-            {/* Title */}
-            <h2 className="text-cyan-300 neon-text-cyan mb-1 md:mb-2 text-3xl md:text-6xl">
-              🎉 YOU WON! 🎉
-            </h2>
-            <p className="text-white mb-4 md:mb-6">Consolation Prize</p>
-
-            {/* Prize Amount - GOLDEN with enhanced glow */}
-            <div className="text-yellow-300 mb-4 md:mb-8 text-5xl md:text-6xl jackpot-text-glow-intense">
-              {formatNumber(consolationEntry?.prizeAmount || 0)} CSPR
-            </div>
-
-            {/* Message */}
-            <p className="text-white text-base md:text-xl mb-4 md:mb-8 px-2">
-              Nice win! Better luck next time for the jackpot! 💰
-            </p>
-
-            {/* Button */}
-            <Button
-              onClick={() => setShowConsolationModal(false)}
-              className="bg-gradient-to-r from-neon-pink to-pink-600 hover:opacity-90 text-white px-6 md:px-8 py-4 md:py-6 cursor-pointer w-full md:w-auto"
-            >
-              Claim Prize
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
