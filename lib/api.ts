@@ -142,8 +142,11 @@ export async function fetchPlayerPlays(
       url += `?status=${status}`;
     }
 
+    const cacheBuster = `_=${Date.now()}`;
+    url += url.includes('?') ? `&${cacheBuster}` : `?${cacheBuster}`;
+
     console.log('[API] Fetching plays:', { url, playerAddress });
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: 'no-store' });
 
     console.log('[API] Response status:', response.status);
 
@@ -247,7 +250,9 @@ export interface LotterySnapshot {
  */
 export async function fetchCurrentJackpot(): Promise<LotterySnapshot | null> {
   try {
-    const response = await fetch(`${API_BASE_URL}/lottery/current`);
+    const response = await fetch(`${API_BASE_URL}/lottery/current?_=${Date.now()}`, {
+      cache: 'no-store',
+    });
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[API] Failed to fetch current jackpot:', errorText);

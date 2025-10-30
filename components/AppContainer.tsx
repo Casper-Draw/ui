@@ -239,6 +239,12 @@ export default function AppContainer() {
           const previousAwaiting = awaitingMap.get(play.requestId);
           if (play.status !== "pending") {
             liveRequestIdsRef.current.delete(play.requestId);
+            if (previousAwaiting) {
+              return {
+                ...play,
+                awaitingFulfillment: false,
+              };
+            }
           }
           const awaiting =
             previousAwaiting !== undefined
@@ -383,7 +389,12 @@ export default function AppContainer() {
     };
 
     // Add entry immediately to show it in UI
-    setEntries((prevEntries) => [optimisticEntry, ...prevEntries]);
+    setEntries((prevEntries) => {
+      const filtered = prevEntries.filter(
+        (existing) => existing.requestId !== optimisticEntry.requestId
+      );
+      return [optimisticEntry, ...filtered];
+    });
     liveRequestIdsRef.current.add(optimisticEntry.requestId);
 
     if (
@@ -415,32 +426,19 @@ export default function AppContainer() {
         }
 
         setEntries((prevEntries) => {
-          let found = false;
-          const updated = prevEntries.map((existing) => {
-            if (
-              existing.requestId === optimisticEntry.requestId ||
-              existing.requestId === play.request_id
-            ) {
-              found = true;
-              return {
-                ...normalizedEntry,
-                awaitingFulfillment: awaitingFlag,
-              };
-            }
-            return existing;
-          });
+          const filtered = prevEntries.filter(
+            (existing) =>
+              existing.requestId !== optimisticEntry.requestId &&
+              existing.requestId !== play.request_id
+          );
 
-          if (!found) {
-            return [
-              {
-                ...normalizedEntry,
-                awaitingFulfillment: awaitingFlag,
-              },
-              ...updated,
-            ];
-          }
-
-          return updated;
+          return [
+            {
+              ...normalizedEntry,
+              awaitingFulfillment: awaitingFlag,
+            },
+            ...filtered,
+          ];
         });
 
         if (normalizedEntry.roundId) {
@@ -484,23 +482,37 @@ export default function AppContainer() {
     }
   };
 
-  const handleWinningCelebration = (entry: LotteryEntry) => {
-    if (
-      entry.status !== "won-jackpot" &&
-      entry.status !== "won-consolation"
-    ) {
-      return;
-    }
+  const handleWinningCelebration = useCallback(
+    (entry: LotteryEntry) => {
+      if (entry.status === "lost") {
+        toast.info("No win this time", {
+          description: "Better luck next round!",
+          style: {
+            background: "#1a0f2e",
+            color: "#00ffff",
+            border: "2px solid #00ffff",
+          },
+        });
+        return;
+      }
 
-    setEntries((prevEntries) =>
-      prevEntries.map((e) => (e.requestId === entry.requestId ? entry : e))
-    );
+      if (entry.status !== "won-jackpot" && entry.status !== "won-consolation") {
+        return;
+      }
 
-    setWinningState({
-      show: true,
-      entry,
-    });
-  };
+      setWinningState((prev) => {
+        if (prev.entry?.requestId === entry.requestId && prev.show) {
+          return prev;
+        }
+
+        return {
+          show: true,
+          entry,
+        };
+      });
+    },
+    []
+  );
 
   const handleCloseWinningFlow = () => {
     setWinningState({
