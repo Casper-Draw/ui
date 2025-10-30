@@ -208,6 +208,10 @@ export default function AppContainer() {
   const winningPrizeAmount = winningEntry?.prizeAmount ?? 0;
   const winningRoundId = winningEntry?.roundId ?? 1;
   const backendStatusAttr = backendHealthy ? "online" : "offline";
+  const jackpotAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastJackpotPlayedForRef = useRef<string | null>(null);
+  const consolationAudioRef = useRef<HTMLAudioElement | null>(null);
+  const lastConsolationPlayedForRef = useRef<string | null>(null);
 
   const loadCurrentJackpot = useCallback(async () => {
     const snapshot = await fetchCurrentJackpot();
@@ -230,6 +234,63 @@ export default function AppContainer() {
       }
     }
   }, []);
+
+  // Play jackpot audio once (no loop) when jackpot modal opens; dedup by requestId
+  useEffect(() => {
+    const playJackpot = async () => {
+      try {
+        if (!jackpotAudioRef.current) {
+          const audio = new Audio('/assets/win.mp3');
+          audio.loop = false;
+          audio.preload = 'auto';
+          audio.volume = 0.9;
+          jackpotAudioRef.current = audio;
+        }
+        await jackpotAudioRef.current.play().catch(() => undefined);
+      } catch {
+        // Ignore playback errors
+      }
+    };
+
+    const rid = winningEntry?.requestId;
+    if (isJackpotWin && rid) {
+      if (lastJackpotPlayedForRef.current !== rid) {
+        lastJackpotPlayedForRef.current = rid;
+        void playJackpot();
+      }
+    }
+    // No cleanup needed for one-shot
+  }, [isJackpotWin, winningEntry?.requestId]);
+
+  // Play one-shot audio when consolation modal shows (once per requestId)
+  useEffect(() => {
+    const playConsolation = async () => {
+      try {
+        if (!consolationAudioRef.current) {
+          const audio = new Audio('/assets/consolation.mp3');
+          audio.loop = false;
+          audio.preload = 'auto';
+          audio.volume = 0.9;
+          consolationAudioRef.current = audio;
+        }
+        await consolationAudioRef.current.play().catch(() => undefined);
+      } catch {
+        // Ignore playback errors
+      }
+    };
+
+    const rid = winningEntry?.requestId;
+    if (isConsolationWin && rid) {
+      if (lastConsolationPlayedForRef.current !== rid) {
+        lastConsolationPlayedForRef.current = rid;
+        void playConsolation();
+      }
+    }
+
+    return () => {
+      // no-op; one-shot sound will end naturally
+    };
+  }, [isConsolationWin, winningEntry?.requestId]);
 
   const integrateBackendEntries = useCallback(
     (plays: LotteryEntry[]) => {

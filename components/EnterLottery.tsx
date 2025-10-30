@@ -405,8 +405,8 @@ export function EnterLottery({
           </div>
 
           {/* Summary Sidebar */}
-          <div className="lg:col-span-1 h-full">
-            <Card className="sticky top-4 bg-black/40 border-2 border-cyan-500/50 neon-glow-cyan h-full flex flex-col">
+          <div className="lg:col-span-1 self-start">
+            <Card className="sticky top-4 bg-black/40 border-2 border-cyan-500/50 neon-glow-cyan flex flex-col">
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Trophy className="w-5 h-5" />

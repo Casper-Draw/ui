@@ -72,12 +72,22 @@ export function Header({
             Play
           </button>
           <button
-            onClick={() => onNavigate("dashboard")}
+            onClick={() => {
+              if (!activeAccount) {
+                onConnect();
+                return;
+              }
+              onNavigate("dashboard");
+            }}
+            disabled={!activeAccount}
             className={
               currentPage === "dashboard"
-                ? "text-neon-pink opacity-100 px-4 py-2 transition-all cursor-pointer text-xl font-semibold"
+                ? "text-neon-pink opacity-100 px-4 py-2 transition-all text-xl font-semibold"
+                : !activeAccount
+                ? "text-neon-pink/40 opacity-40 px-4 py-2 transition-all text-xl font-semibold cursor-not-allowed"
                 : "text-neon-pink/60 opacity-60 hover:opacity-80 px-4 py-2 transition-all cursor-pointer text-xl font-semibold"
             }
+            aria-disabled={!activeAccount}
           >
             Dashboard
           </button>
@@ -142,12 +152,22 @@ export function Header({
               Play
             </button>
             <button
-              onClick={() => handleNavigate("dashboard")}
+              onClick={() => {
+                if (!activeAccount) {
+                  onConnect();
+                  return;
+                }
+                handleNavigate("dashboard");
+              }}
+              disabled={!activeAccount}
               className={
                 currentPage === "dashboard"
-                  ? "text-neon-pink opacity-100 px-4 py-3 transition-all cursor-pointer text-left text-lg font-semibold"
+                  ? "text-neon-pink opacity-100 px-4 py-3 transition-all text-left text-lg font-semibold"
+                  : !activeAccount
+                  ? "text-neon-pink/40 opacity-40 px-4 py-3 transition-all text-left text-lg font-semibold cursor-not-allowed"
                   : "text-neon-pink/60 opacity-60 hover:opacity-80 px-4 py-3 transition-all cursor-pointer text-left text-lg font-semibold"
               }
+              aria-disabled={!activeAccount}
             >
               Dashboard
             </button>
