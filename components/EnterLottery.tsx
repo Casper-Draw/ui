@@ -380,8 +380,8 @@ export function EnterLottery({
                         <p className="text-sm text-gray-400 mb-1">
                           Transaction Hash:
                         </p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-cyan-300 font-mono text-xs break-all">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-cyan-300 font-mono text-xs flex-1 min-w-0 truncate">
                             {currentDeployHash}
                           </p>
                           <button

@@ -40,6 +40,7 @@ interface LotteryEntry {
   prizeAmount?: number;
   settledDate?: string;
   awaitingFulfillment?: boolean; // Flag for fresh transactions awaiting randomness
+  isPlaceholder?: boolean; // Optimistic UI placeholder (awaiting backend record)
 }
 
 interface WinningState {
@@ -315,7 +316,7 @@ export default function AppContainer() {
     console.log('[AppContainer] Active account changed:', activeAccount?.public_key);
 
     if (!activeAccount?.public_key) {
-      // No account connected, use mock data
+      // No account connected, show demo (mock) data
       console.log('[AppContainer] No account, using mock data');
       setEntries(mockEntries);
       return;
@@ -334,18 +335,13 @@ export default function AppContainer() {
         const plays = await fetchPlayerPlays(accountHash);
         console.log('[AppContainer] Received plays:', plays.length);
 
-        if (plays.length > 0) {
-          // Use real data from backend
-          console.log('[AppContainer] Using real data from backend');
-          integrateBackendEntries(plays);
-        } else {
-          // No plays found, use mock data for demo purposes
-          console.log('[AppContainer] No plays found, using mock data');
-          setEntries(mockEntries);
-        }
+        // Use real data from backend; if none, keep empty list
+        console.log('[AppContainer] Using real data from backend');
+        integrateBackendEntries(plays);
       } catch (error) {
         console.error('[AppContainer] Error loading plays:', error);
-        setEntries(mockEntries);
+        // On error with account connected, do not show mocks
+        setEntries([]);
       }
 
       void loadCurrentJackpot();
@@ -377,6 +373,7 @@ export default function AppContainer() {
       ...entry,
       roundId: entry.roundId ?? currentRoundId ?? 1,
       playId: entry.playId ?? nextPlayIdHint ?? "pending",
+      isPlaceholder: true,
     };
 
     // Add entry immediately to show it in UI
@@ -427,6 +424,7 @@ export default function AppContainer() {
             {
               ...normalizedEntry,
               awaitingFulfillment: awaitingFlag,
+              isPlaceholder: false,
             },
             ...filtered,
           ];

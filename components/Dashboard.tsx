@@ -122,10 +122,18 @@ function PendingEntryCard({
         <div className="flex-1 w-full md:w-auto">
           <div className="flex items-center gap-1 md:gap-2 mb-2 flex-wrap">
             <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
-              Play #{parseInt(entry.playId, entry.playId.startsWith('0x') ? 16 : 10)}
+              {entry.isPlaceholder ? (
+                <>Play # Loading...</>
+              ) : (
+                <>Play #{parseInt(entry.playId, entry.playId.startsWith('0x') ? 16 : 10)}</>
+              )}
             </Badge>
             <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
-              Round #{entry.roundId}
+              {entry.isPlaceholder ? (
+                <>Round # Loading...</>
+              ) : (
+                <>Round #{entry.roundId}</>
+              )}
             </Badge>
             <Badge className={statusBadgeClass}>
               {awaitingFulfillment ? (
@@ -151,7 +159,7 @@ function PendingEntryCard({
             <div className="break-all">
               Request ID:{" "}
               <span className="text-cyan-300 font-mono text-[10px] md:text-sm">
-                {entry.requestId}
+                {entry.isPlaceholder ? 'Loading...' : entry.requestId}
               </span>
             </div>
             <div className="text-sm">
