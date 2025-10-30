@@ -23,6 +23,7 @@ import {
 } from "@/lib/api";
 import { formatNumber } from "@/lib/formatNumber";
 import { getAccountHash } from "@/lib/casper-utils";
+import { toast } from "sonner";
 
 // Import the mock data and types from original App.tsx
 interface CasperAccount {
@@ -183,6 +184,8 @@ export default function AppContainer() {
   const [currentRoundId, setCurrentRoundId] = useState<number | null>(null);
   const [nextPlayIdHint, setNextPlayIdHint] = useState<string | null>(null);
   const liveRequestIdsRef = useRef<Set<string>>(new Set());
+  const outcomeNotifiedRef = useRef<Set<string>>(new Set());
+  const pendingSettlementPollsRef = useRef<Set<string>>(new Set());
 
   const setNextPlayIdFromPlayId = (playId: string | undefined) => {
     if (!playId) {
@@ -276,19 +279,7 @@ export default function AppContainer() {
     [setEntries]
   );
 
-  const handleFulfillment = useCallback(
-    (requestId: string) => {
-      setEntries((prevEntries) =>
-        prevEntries.map((entry) =>
-          entry.requestId === requestId
-            ? { ...entry, awaitingFulfillment: false }
-            : entry
-        )
-      );
-      liveRequestIdsRef.current.delete(requestId);
-    },
-    [setEntries]
-  );
+  
 
   // Check backend health on mount and get initial active account
   useEffect(() => {
@@ -484,6 +475,12 @@ export default function AppContainer() {
 
   const handleWinningCelebration = useCallback(
     (entry: LotteryEntry) => {
+      // Deduplicate outcome notifications per requestId
+      const rid = entry.requestId;
+      if (outcomeNotifiedRef.current.has(rid)) {
+        return;
+      }
+
       if (entry.status === "lost") {
         toast.info("No win this time", {
           description: "Better luck next round!",
@@ -493,6 +490,7 @@ export default function AppContainer() {
             border: "2px solid #00ffff",
           },
         });
+        outcomeNotifiedRef.current.add(rid);
         return;
       }
 
@@ -505,6 +503,7 @@ export default function AppContainer() {
           return prev;
         }
 
+        outcomeNotifiedRef.current.add(rid);
         return {
           show: true,
           entry,
@@ -512,6 +511,63 @@ export default function AppContainer() {
       });
     },
     []
+  );
+
+  const awaitSettlementUpdate = useCallback(
+    async (requestId: string) => {
+      if (!activeAccount?.public_key) {
+        return;
+      }
+
+      if (pendingSettlementPollsRef.current.has(requestId)) {
+        return;
+      }
+      pendingSettlementPollsRef.current.add(requestId);
+
+      try {
+        const accountHash = getAccountHash(activeAccount.public_key);
+        const maxAttempts = 20;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+          const plays = await fetchPlayerPlays(accountHash);
+          const target = plays.find((play) => play.requestId === requestId);
+
+          if (target && target.status !== "pending") {
+            integrateBackendEntries(plays);
+            handleWinningCelebration(target);
+            return;
+          }
+
+          const backoffMs = Math.min(3000 + attempt * 500, 6000);
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        }
+
+        const fallbackPlays = await fetchPlayerPlays(accountHash);
+        integrateBackendEntries(fallbackPlays);
+        const fallbackTarget = fallbackPlays.find((p) => p.requestId === requestId);
+        if (fallbackTarget && fallbackTarget.status !== "pending") {
+          handleWinningCelebration(fallbackTarget);
+        }
+      } finally {
+        pendingSettlementPollsRef.current.delete(requestId);
+      }
+    },
+    [activeAccount?.public_key, integrateBackendEntries, handleWinningCelebration]
+  );
+
+  const handleFulfillment = useCallback(
+    (requestId: string) => {
+      setEntries((prevEntries) =>
+        prevEntries.map((entry) =>
+          entry.requestId === requestId
+            ? { ...entry, awaitingFulfillment: false }
+            : entry
+        )
+      );
+      liveRequestIdsRef.current.delete(requestId);
+      void awaitSettlementUpdate(requestId);
+    },
+    [awaitSettlementUpdate, setEntries]
   );
 
   const handleCloseWinningFlow = () => {
@@ -623,6 +679,7 @@ export default function AppContainer() {
           onWinningCelebration={handleWinningCelebration}
           onFulfillment={handleFulfillment}
           onRefresh={handleRefreshPlays}
+          onAwaitSettlement={awaitSettlementUpdate}
         />
       )}
 

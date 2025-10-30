@@ -218,6 +218,7 @@ interface DashboardProps {
   onWinningCelebration?: (entry: LotteryEntry) => void;
   onFulfillment?: (requestId: string) => void;
   onRefresh?: () => void | Promise<void>;
+  onAwaitSettlement?: (requestId: string) => void;
 }
 
 export function Dashboard({
@@ -227,6 +228,7 @@ export function Dashboard({
   onWinningCelebration,
   onFulfillment,
   onRefresh,
+  onAwaitSettlement,
 }: DashboardProps) {
   const [settlingRequests, setSettlingRequests] = useState<Set<string>>(
     new Set()
@@ -262,10 +264,9 @@ export function Dashboard({
 
     entries.forEach((entry) => {
       const previousStatus = previousStatusesRef.current.get(entry.requestId);
-      const isWinningStatus =
-        entry.status === "won-jackpot" || entry.status === "won-consolation";
+      const statusChanged = previousStatus !== entry.status;
 
-      if (isWinningStatus && previousStatus !== entry.status) {
+      if (statusChanged && entry.status !== "pending") {
         onWinningCelebration?.(entry);
       }
 
@@ -348,9 +349,16 @@ export function Dashboard({
                 },
               });
               void onRefresh?.();
+              onAwaitSettlement?.(entry.requestId);
             } else {
+              const raw = result.errorMessage || "Transaction reverted on-chain.";
+              const isMissedEvent = /User\s*error\s*:\s*(3|4)/i.test(raw);
+              const friendly = isMissedEvent
+                ? "Please contact the Casper Draw team. Unable to conclude."
+                : raw;
+
               toast.error("Settlement failed", {
-                description: result.errorMessage || "Transaction reverted on-chain.",
+                description: friendly,
                 style: {
                   background: "#1a0f2e",
                   color: "#ff00ff",
@@ -421,13 +429,12 @@ export function Dashboard({
         {/* Stats Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <motion.div
-            whileHover={{ scale: 1.05, y: -5 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
             className="h-full"
           >
-            <Card className="bg-black/40 border-2 border-cyan-500/50 neon-glow-cyan h-full flex flex-col">
+            <Card className="bg-black/40 border-2 border-cyan-500/50 neon-glow-cyan stat-glow-cyan h-full flex flex-col transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base md:text-lg text-white">
                   Total Tickets
@@ -444,13 +451,12 @@ export function Dashboard({
           </motion.div>
 
           <motion.div
-            whileHover={{ scale: 1.05, y: -5 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="h-full"
           >
-            <Card className="bg-black/40 border-2 border-yellow-500/50 neon-glow-yellow h-full flex flex-col">
+            <Card className="bg-black/40 border-2 border-yellow-500/50 neon-glow-yellow stat-glow-yellow h-full flex flex-col transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base md:text-lg text-white">
                   Total Won (CSPR)
@@ -469,13 +475,12 @@ export function Dashboard({
           </motion.div>
 
           <motion.div
-            whileHover={{ scale: 1.05, y: -5 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             className="h-full"
           >
-            <Card className="bg-black/40 border-2 border-neon-pink/50 neon-glow-pink h-full flex flex-col">
+            <Card className="bg-black/40 border-2 border-neon-pink/50 neon-glow-pink stat-glow-pink h-full flex flex-col transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base md:text-lg text-white">
                   Total Spent (CSPR)
@@ -494,13 +499,12 @@ export function Dashboard({
           </motion.div>
 
           <motion.div
-            whileHover={{ scale: 1.05, y: -5 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             className="h-full"
           >
-            <Card className={`bg-black/40 border-2 border-green-500/50 neon-glow-green h-full flex flex-col`}>
+            <Card className={`bg-black/40 border-2 border-green-500/50 neon-glow-green stat-glow-green h-full flex flex-col transition-shadow`}>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base md:text-lg text-white">
                   Net Profit (CSPR)
