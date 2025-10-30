@@ -41,6 +41,10 @@ interface LotteryEntry {
   settledDate?: string;
   awaitingFulfillment?: boolean; // Flag for fresh transactions awaiting randomness
   isPlaceholder?: boolean; // Optimistic UI placeholder (awaiting backend record)
+  entryDeployHash?: string; // Enter lottery deploy hash from backend
+  requestDeployHash?: string;
+  fulfillDeployHash?: string;
+  settleDeployHash?: string;
 }
 
 interface WinningState {
@@ -62,7 +66,7 @@ const mockEntries: LotteryEntry[] = [
     roundId: 142,
     entryDate: new Date(BASE_TIME - 75 * 1000).toISOString(), // 75 seconds ago
     cost: 100,
-    status: 'pending',
+    status: "pending",
   },
   {
     requestId: "req_q9r8s7t6u5v4w3x2y1z0a1b2c3d4e5f6",
@@ -70,7 +74,7 @@ const mockEntries: LotteryEntry[] = [
     roundId: 142,
     entryDate: new Date(BASE_TIME - 90 * 1000).toISOString(), // 90 seconds ago
     cost: 100,
-    status: 'pending',
+    status: "pending",
   },
   {
     requestId: "req_m5n6o7p8q9r0s1t2u3v4w5x6y7z8a9b0",
@@ -78,7 +82,7 @@ const mockEntries: LotteryEntry[] = [
     roundId: 141,
     entryDate: new Date(BASE_TIME - 105 * 1000).toISOString(), // 105 seconds ago
     cost: 100,
-    status: 'pending',
+    status: "pending",
   },
   // Won jackpot
   {
@@ -87,9 +91,11 @@ const mockEntries: LotteryEntry[] = [
     roundId: 140,
     entryDate: new Date(BASE_TIME - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
     cost: 100,
-    status: 'won-jackpot',
+    status: "won-jackpot",
     prizeAmount: 125000,
-    settledDate: new Date(BASE_TIME - 2 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000).toISOString(),
+    settledDate: new Date(
+      BASE_TIME - 2 * 24 * 60 * 60 * 1000 + 30 * 60 * 1000
+    ).toISOString(),
   },
   // Won consolation
   {
@@ -98,9 +104,11 @@ const mockEntries: LotteryEntry[] = [
     roundId: 139,
     entryDate: new Date(BASE_TIME - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
     cost: 100,
-    status: 'won-consolation',
+    status: "won-consolation",
     prizeAmount: 450,
-    settledDate: new Date(BASE_TIME - 3 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString(),
+    settledDate: new Date(
+      BASE_TIME - 3 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000
+    ).toISOString(),
   },
   {
     requestId: "req_s9t0u1v2w3x4y5z6a7b8c9d0e1f2g3h4",
@@ -108,9 +116,11 @@ const mockEntries: LotteryEntry[] = [
     roundId: 138,
     entryDate: new Date(BASE_TIME - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
     cost: 100,
-    status: 'won-consolation',
+    status: "won-consolation",
     prizeAmount: 275,
-    settledDate: new Date(BASE_TIME - 5 * 24 * 60 * 60 * 1000 + 20 * 60 * 1000).toISOString(),
+    settledDate: new Date(
+      BASE_TIME - 5 * 24 * 60 * 60 * 1000 + 20 * 60 * 1000
+    ).toISOString(),
   },
   {
     requestId: "req_i5j6k7l8m9n0o1p2q3r4s5t6u7v8w9x0",
@@ -118,9 +128,11 @@ const mockEntries: LotteryEntry[] = [
     roundId: 137,
     entryDate: new Date(BASE_TIME - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
     cost: 100,
-    status: 'won-consolation',
+    status: "won-consolation",
     prizeAmount: 180,
-    settledDate: new Date(BASE_TIME - 7 * 24 * 60 * 60 * 1000 + 15 * 60 * 1000).toISOString(),
+    settledDate: new Date(
+      BASE_TIME - 7 * 24 * 60 * 60 * 1000 + 15 * 60 * 1000
+    ).toISOString(),
   },
   // Lost
   {
@@ -129,8 +141,10 @@ const mockEntries: LotteryEntry[] = [
     roundId: 141,
     entryDate: new Date(BASE_TIME - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
     cost: 100,
-    status: 'lost',
-    settledDate: new Date(BASE_TIME - 1 * 24 * 60 * 60 * 1000 + 10 * 60 * 1000).toISOString(),
+    status: "lost",
+    settledDate: new Date(
+      BASE_TIME - 1 * 24 * 60 * 60 * 1000 + 10 * 60 * 1000
+    ).toISOString(),
   },
   {
     requestId: "req_o7p8q9r0s1t2u3v4w5x6y7z8a9b0c1d2",
@@ -138,8 +152,10 @@ const mockEntries: LotteryEntry[] = [
     roundId: 140,
     entryDate: new Date(BASE_TIME - 3 * 24 * 60 * 60 * 1000).toISOString(),
     cost: 100,
-    status: 'lost',
-    settledDate: new Date(BASE_TIME - 3 * 24 * 60 * 60 * 1000 + 25 * 60 * 1000).toISOString(),
+    status: "lost",
+    settledDate: new Date(
+      BASE_TIME - 3 * 24 * 60 * 60 * 1000 + 25 * 60 * 1000
+    ).toISOString(),
   },
   {
     requestId: "req_e3f4g5h6i7j8k9l0m1n2o3p4q5r6s7t8",
@@ -147,8 +163,10 @@ const mockEntries: LotteryEntry[] = [
     roundId: 139,
     entryDate: new Date(BASE_TIME - 4 * 24 * 60 * 60 * 1000).toISOString(),
     cost: 100,
-    status: 'lost',
-    settledDate: new Date(BASE_TIME - 4 * 24 * 60 * 60 * 1000 + 35 * 60 * 1000).toISOString(),
+    status: "lost",
+    settledDate: new Date(
+      BASE_TIME - 4 * 24 * 60 * 60 * 1000 + 35 * 60 * 1000
+    ).toISOString(),
   },
   {
     requestId: "req_u9v0w1x2y3z4a5b6c7d8e9f0g1h2i3j4",
@@ -156,8 +174,10 @@ const mockEntries: LotteryEntry[] = [
     roundId: 138,
     entryDate: new Date(BASE_TIME - 6 * 24 * 60 * 60 * 1000).toISOString(),
     cost: 100,
-    status: 'lost',
-    settledDate: new Date(BASE_TIME - 6 * 24 * 60 * 60 * 1000 + 40 * 60 * 1000).toISOString(),
+    status: "lost",
+    settledDate: new Date(
+      BASE_TIME - 6 * 24 * 60 * 60 * 1000 + 40 * 60 * 1000
+    ).toISOString(),
   },
   {
     requestId: "req_k5l6m7n8o9p0q1r2s3t4u5v6w7x8y9z0",
@@ -165,14 +185,18 @@ const mockEntries: LotteryEntry[] = [
     roundId: 137,
     entryDate: new Date(BASE_TIME - 8 * 24 * 60 * 60 * 1000).toISOString(),
     cost: 100,
-    status: 'lost',
-    settledDate: new Date(BASE_TIME - 8 * 24 * 60 * 60 * 1000 + 50 * 60 * 1000).toISOString(),
+    status: "lost",
+    settledDate: new Date(
+      BASE_TIME - 8 * 24 * 60 * 60 * 1000 + 50 * 60 * 1000
+    ).toISOString(),
   },
 ];
 
 export default function AppContainer() {
   const clickRef = useClickRef();
-  const [activeAccount, setActiveAccount] = useState<CasperAccount | null>(null);
+  const [activeAccount, setActiveAccount] = useState<CasperAccount | null>(
+    null
+  );
   const [currentPage, setCurrentPage] = useState<string>("landing");
   const [entries, setEntries] = useState<LotteryEntry[]>(mockEntries);
   const [winningState, setWinningState] = useState<WinningState>({
@@ -181,7 +205,9 @@ export default function AppContainer() {
   });
   const [isLoadingPlays, setIsLoadingPlays] = useState(false);
   const [backendHealthy, setBackendHealthy] = useState(false);
-  const [currentJackpotCspr, setCurrentJackpotCspr] = useState<number | null>(null);
+  const [currentJackpotCspr, setCurrentJackpotCspr] = useState<number | null>(
+    null
+  );
   const [currentRoundId, setCurrentRoundId] = useState<number | null>(null);
   const [nextPlayIdHint, setNextPlayIdHint] = useState<string | null>(null);
   const liveRequestIdsRef = useRef<Set<string>>(new Set());
@@ -196,7 +222,11 @@ export default function AppContainer() {
       const current = playId.startsWith("0x") ? BigInt(playId) : BigInt(playId);
       setNextPlayIdHint(`0x${(current + 1n).toString(16)}`);
     } catch (error) {
-      console.warn('[AppContainer] Failed to compute next play id from play identifier:', playId, error);
+      console.warn(
+        "[AppContainer] Failed to compute next play id from play identifier:",
+        playId,
+        error
+      );
     }
   };
 
@@ -230,7 +260,11 @@ export default function AppContainer() {
         const next = BigInt(snapshot.totalPlays) + 1n;
         setNextPlayIdHint(`0x${next.toString(16)}`);
       } catch (error) {
-        console.warn('[AppContainer] Failed to compute next play id from snapshot:', snapshot.totalPlays, error);
+        console.warn(
+          "[AppContainer] Failed to compute next play id from snapshot:",
+          snapshot.totalPlays,
+          error
+        );
       }
     }
   }, []);
@@ -240,9 +274,9 @@ export default function AppContainer() {
     const playJackpot = async () => {
       try {
         if (!jackpotAudioRef.current) {
-          const audio = new Audio('/assets/win.mp3');
+          const audio = new Audio("/assets/win.mp3");
           audio.loop = false;
-          audio.preload = 'auto';
+          audio.preload = "auto";
           audio.volume = 0.9;
           jackpotAudioRef.current = audio;
         }
@@ -267,9 +301,9 @@ export default function AppContainer() {
     const playConsolation = async () => {
       try {
         if (!consolationAudioRef.current) {
-          const audio = new Audio('/assets/consolation.mp3');
+          const audio = new Audio("/assets/consolation.mp3");
           audio.loop = false;
-          audio.preload = 'auto';
+          audio.preload = "auto";
           audio.volume = 0.9;
           consolationAudioRef.current = audio;
         }
@@ -296,7 +330,10 @@ export default function AppContainer() {
     (plays: LotteryEntry[]) => {
       setEntries((prevEntries) => {
         const awaitingMap = new Map(
-          prevEntries.map((entry) => [entry.requestId, entry.awaitingFulfillment])
+          prevEntries.map((entry) => [
+            entry.requestId,
+            entry.awaitingFulfillment,
+          ])
         );
         const backendIds = new Set(plays.map((play) => play.requestId));
 
@@ -341,8 +378,6 @@ export default function AppContainer() {
     [setEntries]
   );
 
-  
-
   // Check backend health on mount and get initial active account
   useEffect(() => {
     checkBackendHealth().then(setBackendHealthy);
@@ -355,17 +390,20 @@ export default function AppContainer() {
           (typeof window !== "undefined" ? window.csprclick : undefined) ||
           (clickRef as unknown as CsprClick | undefined);
 
-        if (inst && typeof inst.getActivePublicKey === 'function') {
+        if (inst && typeof inst.getActivePublicKey === "function") {
           const publicKey = await inst.getActivePublicKey();
           if (publicKey) {
-            console.log('[AppContainer] Found initial connected account:', publicKey);
+            console.log(
+              "[AppContainer] Found initial connected account:",
+              publicKey
+            );
             setActiveAccount({ public_key: publicKey });
           } else {
-            console.log('[AppContainer] No account connected initially');
+            console.log("[AppContainer] No account connected initially");
           }
         }
       } catch (error) {
-        console.log('[AppContainer] Error checking initial account:', error);
+        console.log("[AppContainer] Error checking initial account:", error);
       }
     };
 
@@ -374,33 +412,39 @@ export default function AppContainer() {
 
   // Fetch player plays when activeAccount changes
   useEffect(() => {
-    console.log('[AppContainer] Active account changed:', activeAccount?.public_key);
+    console.log(
+      "[AppContainer] Active account changed:",
+      activeAccount?.public_key
+    );
 
     if (!activeAccount?.public_key) {
       // No account connected, show demo (mock) data
-      console.log('[AppContainer] No account, using mock data');
+      console.log("[AppContainer] No account, using mock data");
       setEntries(mockEntries);
       return;
     }
 
     // Account connected, fetch real plays
     const loadPlays = async () => {
-      console.log('[AppContainer] Loading plays for public key:', activeAccount.public_key);
+      console.log(
+        "[AppContainer] Loading plays for public key:",
+        activeAccount.public_key
+      );
       setIsLoadingPlays(true);
 
       try {
         // Convert public key to account hash (what the contract uses)
         const accountHash = getAccountHash(activeAccount.public_key);
-        console.log('[AppContainer] Account hash:', accountHash);
+        console.log("[AppContainer] Account hash:", accountHash);
 
         const plays = await fetchPlayerPlays(accountHash);
-        console.log('[AppContainer] Received plays:', plays.length);
+        console.log("[AppContainer] Received plays:", plays.length);
 
         // Use real data from backend; if none, keep empty list
-        console.log('[AppContainer] Using real data from backend');
+        console.log("[AppContainer] Using real data from backend");
         integrateBackendEntries(plays);
       } catch (error) {
-        console.error('[AppContainer] Error loading plays:', error);
+        console.error("[AppContainer] Error loading plays:", error);
         // On error with account connected, do not show mocks
         setEntries([]);
       }
@@ -414,19 +458,25 @@ export default function AppContainer() {
 
   // Set up wallet event listeners
   useEffect(() => {
-    const inst = (clickRef ?? (typeof window !== 'undefined' ? window.csprclick : undefined)) as
-      | { on: (event: string, cb: (evt?: { account: CasperAccount } | unknown) => void) => void }
+    const inst = (clickRef ??
+      (typeof window !== "undefined" ? window.csprclick : undefined)) as
+      | {
+          on: (
+            event: string,
+            cb: (evt?: { account: CasperAccount } | unknown) => void
+          ) => void;
+        }
       | undefined;
-    inst?.on('csprclick:signed_in', (evt: unknown) => {
+    inst?.on("csprclick:signed_in", (evt: unknown) => {
       const e = evt as { account: CasperAccount };
       setActiveAccount(e.account);
     });
-    inst?.on('csprclick:switched_account', (evt: unknown) => {
+    inst?.on("csprclick:switched_account", (evt: unknown) => {
       const e = evt as { account: CasperAccount };
       setActiveAccount(e.account);
     });
-    inst?.on('csprclick:signed_out', () => setActiveAccount(null));
-    inst?.on('csprclick:disconnected', () => setActiveAccount(null));
+    inst?.on("csprclick:signed_out", () => setActiveAccount(null));
+    inst?.on("csprclick:disconnected", () => setActiveAccount(null));
   }, [clickRef]);
 
   const handleEntrySubmit = async (entry: LotteryEntry) => {
@@ -455,14 +505,16 @@ export default function AppContainer() {
 
     // If entry is awaiting fulfillment, poll backend for real request_id
     if (optimisticEntry.awaitingFulfillment && optimisticEntry.requestId) {
-      console.log('[AppContainer] Entry awaiting fulfillment, polling for real request_id...');
-      console.log('[AppContainer] Deploy hash:', optimisticEntry.requestId);
+      console.log(
+        "[AppContainer] Entry awaiting fulfillment, polling for real request_id..."
+      );
+      console.log("[AppContainer] Deploy hash:", optimisticEntry.requestId);
 
       // Poll backend in background
       const play = await fetchPlayByDeployHash(optimisticEntry.requestId);
 
       if (play) {
-        console.log('[AppContainer] Real request_id found:', play.request_id);
+        console.log("[AppContainer] Real request_id found:", play.request_id);
 
         const normalizedEntry = backendPlayToEntry(play, optimisticEntry.cost);
         const awaitingFlag =
@@ -493,19 +545,23 @@ export default function AppContainer() {
 
         if (normalizedEntry.roundId) {
           setCurrentRoundId((prev) =>
-            !prev || normalizedEntry.roundId > prev ? normalizedEntry.roundId : prev
+            !prev || normalizedEntry.roundId > prev
+              ? normalizedEntry.roundId
+              : prev
           );
         }
         setNextPlayIdFromPlayId(normalizedEntry.playId);
       } else {
-        console.error('[AppContainer] Failed to fetch real request_id, keeping deploy hash');
+        console.error(
+          "[AppContainer] Failed to fetch real request_id, keeping deploy hash"
+        );
       }
     }
   };
 
   const handleRefreshPlays = async () => {
     if (activeAccount?.public_key) {
-      console.log('[AppContainer] Manual refresh triggered');
+      console.log("[AppContainer] Manual refresh triggered");
       setIsLoadingPlays(true);
       try {
         const accountHash = getAccountHash(activeAccount.public_key);
@@ -515,7 +571,7 @@ export default function AppContainer() {
         }
         void loadCurrentJackpot();
       } catch (error) {
-        console.error('[AppContainer] Error refreshing plays:', error);
+        console.error("[AppContainer] Error refreshing plays:", error);
       }
       setIsLoadingPlays(false);
     }
@@ -526,51 +582,48 @@ export default function AppContainer() {
     window.scrollTo(0, 0);
 
     // If navigating to dashboard and wallet connected, refresh plays
-    if (page === 'dashboard' && activeAccount?.public_key) {
-      console.log('[AppContainer] Navigated to dashboard, refreshing plays');
+    if (page === "dashboard" && activeAccount?.public_key) {
+      console.log("[AppContainer] Navigated to dashboard, refreshing plays");
       handleRefreshPlays();
     }
   };
 
-  const handleWinningCelebration = useCallback(
-    (entry: LotteryEntry) => {
-      // Deduplicate outcome notifications per requestId
-      const rid = entry.requestId;
-      if (outcomeNotifiedRef.current.has(rid)) {
-        return;
-      }
+  const handleWinningCelebration = useCallback((entry: LotteryEntry) => {
+    // Deduplicate outcome notifications per requestId
+    const rid = entry.requestId;
+    if (outcomeNotifiedRef.current.has(rid)) {
+      return;
+    }
 
-      if (entry.status === "lost") {
-        toast.info("No win this time", {
-          description: "Better luck next round!",
-          style: {
-            background: "#1a0f2e",
-            color: "#00ffff",
-            border: "2px solid #00ffff",
-          },
-        });
-        outcomeNotifiedRef.current.add(rid);
-        return;
-      }
-
-      if (entry.status !== "won-jackpot" && entry.status !== "won-consolation") {
-        return;
-      }
-
-      setWinningState((prev) => {
-        if (prev.entry?.requestId === entry.requestId && prev.show) {
-          return prev;
-        }
-
-        outcomeNotifiedRef.current.add(rid);
-        return {
-          show: true,
-          entry,
-        };
+    if (entry.status === "lost") {
+      toast.info("Uh Oh! You did not win", {
+        description: "Better luck next round!",
+        style: {
+          background: "#202020",
+          color: "#00ffff",
+          border: "2px solid #00ffff",
+        },
       });
-    },
-    []
-  );
+      outcomeNotifiedRef.current.add(rid);
+      return;
+    }
+
+    if (entry.status !== "won-jackpot" && entry.status !== "won-consolation") {
+      return;
+    }
+
+    setWinningState((prev) => {
+      if (prev.entry?.requestId === entry.requestId && prev.show) {
+        return prev;
+      }
+
+      outcomeNotifiedRef.current.add(rid);
+      return {
+        show: true,
+        entry,
+      };
+    });
+  }, []);
 
   const awaitSettlementUpdate = useCallback(
     async (requestId: string) => {
@@ -603,7 +656,9 @@ export default function AppContainer() {
 
         const fallbackPlays = await fetchPlayerPlays(accountHash);
         integrateBackendEntries(fallbackPlays);
-        const fallbackTarget = fallbackPlays.find((p) => p.requestId === requestId);
+        const fallbackTarget = fallbackPlays.find(
+          (p) => p.requestId === requestId
+        );
         if (fallbackTarget && fallbackTarget.status !== "pending") {
           handleWinningCelebration(fallbackTarget);
         }
@@ -611,7 +666,11 @@ export default function AppContainer() {
         pendingSettlementPollsRef.current.delete(requestId);
       }
     },
-    [activeAccount?.public_key, integrateBackendEntries, handleWinningCelebration]
+    [
+      activeAccount?.public_key,
+      integrateBackendEntries,
+      handleWinningCelebration,
+    ]
   );
 
   const handleFulfillment = useCallback(
@@ -637,16 +696,18 @@ export default function AppContainer() {
   };
 
   const handleConnectWallet = () => {
-    const inst = (typeof window !== 'undefined' ? window.csprclick : undefined) ||
+    const inst =
+      (typeof window !== "undefined" ? window.csprclick : undefined) ||
       (clickRef as unknown as CsprClick | undefined);
-    if (inst && typeof inst.signIn === 'function') {
+    if (inst && typeof inst.signIn === "function") {
       inst.signIn();
       return;
     }
     setTimeout(() => {
-      const i2 = (typeof window !== 'undefined' ? window.csprclick : undefined) ||
+      const i2 =
+        (typeof window !== "undefined" ? window.csprclick : undefined) ||
         (clickRef as unknown as CsprClick | undefined);
-      if (i2 && typeof i2.signIn === 'function') i2.signIn();
+      if (i2 && typeof i2.signIn === "function") i2.signIn();
     }, 0);
   };
 
@@ -660,7 +721,9 @@ export default function AppContainer() {
     }, 0);
 
     if (latestRound > 0) {
-      setCurrentRoundId((prev) => (!prev || latestRound > prev ? latestRound : prev));
+      setCurrentRoundId((prev) =>
+        !prev || latestRound > prev ? latestRound : prev
+      );
     }
 
     for (const entry of entries) {
@@ -739,6 +802,15 @@ export default function AppContainer() {
           onFulfillment={handleFulfillment}
           onRefresh={handleRefreshPlays}
           onAwaitSettlement={awaitSettlementUpdate}
+          onTxnUpdate={(requestId, meta) => {
+            setEntries((prev) =>
+              prev.map((e) =>
+                e.requestId === requestId
+                  ? { ...e, ...meta }
+                  : e
+              )
+            );
+          }}
         />
       )}
 

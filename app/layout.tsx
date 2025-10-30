@@ -15,7 +15,14 @@ import CasperProvider from "@/context/CasperProvider";
 
 export const metadata: Metadata = {
   title: "Casper Draw - Instant Lottery on Casper Network",
-  description: "Instant lottery with Autonom RNG powered by Casper Network",
+  description:
+    "Casper Draw - Instant lottery with Autonom RNG powered by Casper Network",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({

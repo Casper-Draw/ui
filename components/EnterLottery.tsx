@@ -45,6 +45,8 @@ interface EnterLotteryProps {
     entryDate: string;
     cost: number;
     status: "pending";
+    entryDeployHash?: string;
+    awaitingFulfillment?: boolean;
   }) => void;
   activeAccount: CasperAccount | null;
   onConnect: () => void;
@@ -63,7 +65,9 @@ export function EnterLottery({
   nextPlayIdHint,
 }: EnterLotteryProps) {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentDeployHash, setCurrentDeployHash] = useState<string | null>(null);
+  const [currentDeployHash, setCurrentDeployHash] = useState<string | null>(
+    null
+  );
 
   // Contract configuration from environment variables
   const ticketPrice = config.ticketPriceCspr;
@@ -83,7 +87,7 @@ export function EnterLottery({
     if (!activeAccount) {
       toast.error("Please connect your wallet first", {
         style: {
-          background: "#1a0f2e",
+          background: "#202020",
           color: "#ff00ff",
           border: "2px solid #ff00ff",
         },
@@ -133,6 +137,7 @@ export function EnterLottery({
                   entryDate: new Date().toISOString(),
                   cost: ticketPrice,
                   status: "pending" as const,
+                  entryDeployHash: result.deployHash,
                   awaitingFulfillment: true, // Mark as fresh transaction
                 };
 
@@ -145,14 +150,11 @@ export function EnterLottery({
                   action: {
                     label: "View on Explorer",
                     onClick: () => {
-                      window.open(
-                        getExplorerUrl(result.deployHash),
-                        "_blank"
-                      );
+                      window.open(getExplorerUrl(result.deployHash), "_blank");
                     },
                   },
                   style: {
-                    background: "#1a0f2e",
+                    background: "#202020",
                     color: "#ffd700",
                     border: "2px solid #ffd700",
                   },
@@ -167,7 +169,7 @@ export function EnterLottery({
                 toast.error("Transaction failed", {
                   description: result.errorMessage || "Please try again",
                   style: {
-                    background: "#1a0f2e",
+                    background: "#202020",
                     color: "#ff00ff",
                     border: "2px solid #ff00ff",
                   },
@@ -182,7 +184,7 @@ export function EnterLottery({
                   ? statusError.message
                   : "Unknown error",
               style: {
-                background: "#1a0f2e",
+                background: "#202020",
                 color: "#ff00ff",
                 border: "2px solid #ff00ff",
               },
@@ -198,7 +200,7 @@ export function EnterLottery({
         description:
           error instanceof Error ? error.message : "Please try again",
         style: {
-          background: "#1a0f2e",
+          background: "#202020",
           color: "#ff00ff",
           border: "2px solid #ff00ff",
         },

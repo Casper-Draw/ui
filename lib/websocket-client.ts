@@ -12,9 +12,16 @@ import { io, Socket } from 'socket.io-client';
 
 const WS_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001';
 
+interface RequestedEvent {
+  requestId: string;
+  requestDeployHash: string;
+  timestamp: string;
+}
+
 interface FulfilledEvent {
   requestId: string;
   randomness: string;
+  fulfillDeployHash?: string;
   timestamp: string;
 }
 
@@ -33,7 +40,11 @@ interface UseWaitForFulfillmentResult {
  */
 export function useWaitForFulfillment(
   requestId: string | null,
-  enabled: boolean = true
+  enabled: boolean = true,
+  opts?: {
+    onRequested?: (deployHash: string) => void;
+    onFulfilledMeta?: (randomness: string, fulfillDeployHash?: string) => void;
+  }
 ): UseWaitForFulfillmentResult {
   const [isFulfilled, setIsFulfilled] = useState(false);
   const [isWaiting, setIsWaiting] = useState(false);
@@ -65,8 +76,18 @@ export function useWaitForFulfillment(
       socket.emit('subscribe', requestId);
     });
 
+    socket.on('requested', (data: RequestedEvent) => {
+      console.log(`[WS] Requested event received:`, data);
+      try {
+        opts?.onRequested?.(data.requestDeployHash);
+      } catch {}
+    });
+
     socket.on('fulfilled', (data: FulfilledEvent) => {
       console.log(`[WS] Fulfilled event received:`, data);
+      try {
+        opts?.onFulfilledMeta?.(data.randomness, data.fulfillDeployHash);
+      } catch {}
       setIsFulfilled(true);
       setIsWaiting(false);
       socketRef.current = null;

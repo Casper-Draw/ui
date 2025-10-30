@@ -19,6 +19,11 @@ export interface BackendLotteryPlay {
   settle_deploy_hash?: string;
   created_at?: string;
   updated_at?: string;
+  // Nested relation from randomness_requests join
+  randomness_requests?: {
+    request_deploy_hash?: string;
+    fulfill_deploy_hash?: string;
+  } | null;
 }
 
 export interface LotteryEntry {
@@ -30,6 +35,10 @@ export interface LotteryEntry {
   status: "pending" | "won-jackpot" | "won-consolation" | "lost";
   prizeAmount?: number;
   settledDate?: string;
+  entryDeployHash?: string;
+  requestDeployHash?: string;
+  fulfillDeployHash?: string;
+  settleDeployHash?: string;
 }
 
 /**
@@ -126,6 +135,14 @@ export function backendPlayToEntry(play: BackendLotteryPlay, ticketCost: number 
     status,
     prizeAmount,
     settledDate: play.settled_at,
+    entryDeployHash: play.entry_deploy_hash,
+    settleDeployHash: play.settle_deploy_hash,
+    requestDeployHash: (Array.isArray((play as any).randomness_requests)
+      ? (play as any).randomness_requests?.[0]?.request_deploy_hash
+      : (play as any).randomness_requests?.request_deploy_hash) as string | undefined,
+    fulfillDeployHash: (Array.isArray((play as any).randomness_requests)
+      ? (play as any).randomness_requests?.[0]?.fulfill_deploy_hash
+      : (play as any).randomness_requests?.fulfill_deploy_hash) as string | undefined,
   };
 }
 

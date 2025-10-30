@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   Zap,
+  ExternalLink,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -40,26 +41,60 @@ import {
 } from "./ui/tooltip";
 import { PublicKey } from "casper-js-sdk";
 
+// Small external link pill used to show txns
+const TxnPill = ({ label, hash }: { label: string; hash?: string }) => (
+  <button
+    type="button"
+    disabled={!hash}
+    onClick={() => hash && window.open(getExplorerUrl(hash), "_blank")}
+    className={`inline-flex items-center gap-1 px-2 py-1 rounded-md border text-xs md:text-sm ${
+      hash
+        ? "border-cyan-500/40 text-cyan-300 hover:text-cyan-200 hover:border-cyan-400"
+        : "border-gray-600/40 text-gray-500 cursor-not-allowed"
+    }`}
+    title={hash ? `${label} transaction` : `${label} transaction unavailable`}
+  >
+    {label}
+    <ExternalLink className="w-3 h-3" />
+  </button>
+);
+
 // Component for handling individual pending entry with WebSocket
 function PendingEntryCard({
   entry,
   isSettling,
   onSettle,
   onFulfillment,
+  onTxnUpdate,
 }: {
   entry: LotteryEntry;
   isSettling: boolean;
   onSettle: () => void;
   onFulfillment?: (requestId: string) => void;
+  onTxnUpdate?: (
+    requestId: string,
+    meta: { requestDeployHash?: string; fulfillDeployHash?: string }
+  ) => void;
 }) {
   // Use WebSocket hook only if entry has awaitingFulfillment flag AND real request_id
   // Real request_ids are short hex format: "0x21" (not long deploy hashes)
-  const isRealRequestId = entry.requestId?.startsWith('0x') && entry.requestId.length < 10;
-  const shouldEnableWebSocket = entry.awaitingFulfillment === true && isRealRequestId;
+  const isRealRequestId =
+    entry.requestId?.startsWith("0x") && entry.requestId.length < 10;
+  const shouldEnableWebSocket =
+    entry.awaitingFulfillment === true && isRealRequestId;
 
   const { isFulfilled, isWaiting, isTimedOut } = useWaitForFulfillment(
     entry.requestId,
-    shouldEnableWebSocket
+    shouldEnableWebSocket,
+    {
+      onRequested: (deployHash) => {
+        onTxnUpdate?.(entry.requestId, { requestDeployHash: deployHash });
+      },
+      onFulfilledMeta: (_rand, fulfillHash) => {
+        if (fulfillHash)
+          onTxnUpdate?.(entry.requestId, { fulfillDeployHash: fulfillHash });
+      },
+    }
   );
 
   const hasNotifiedRef = useRef(false);
@@ -67,10 +102,10 @@ function PendingEntryCard({
   // Show toast when fulfilled
   useEffect(() => {
     if (isFulfilled) {
-      toast.success("Ticket awaiting settlement 🎲", {
+      toast.success("Ticket awaiting settlement", {
         description: "Randomness fulfilled! You can now check your results.",
         style: {
-          background: "#1a0f2e",
+          background: "#202020",
           color: "#00ffff",
           border: "2px solid #00ffff",
         },
@@ -123,9 +158,15 @@ function PendingEntryCard({
           <div className="flex items-center gap-1 md:gap-2 mb-2 flex-wrap">
             <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
               {entry.isPlaceholder ? (
-                <>Play # Loading...</>
+                <>Ticket ID # Loading...</>
               ) : (
-                <>Play #{parseInt(entry.playId, entry.playId.startsWith('0x') ? 16 : 10)}</>
+                <>
+                  Ticket ID #
+                  {parseInt(
+                    entry.playId,
+                    entry.playId.startsWith("0x") ? 16 : 10
+                  )}
+                </>
               )}
             </Badge>
             <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
@@ -158,22 +199,22 @@ function PendingEntryCard({
           <div className="text-sm md:text-base text-gray-400 space-y-1">
             <div className="break-all">
               Request ID:{" "}
-              <span className="text-cyan-300 font-mono text-[10px] md:text-sm">
-                {entry.isPlaceholder ? 'Loading...' : entry.requestId}
+              <span className="text-cyan-300 font-mono text-sm md:text-base">
+                {entry.isPlaceholder ? "Loading..." : entry.requestId}
               </span>
             </div>
-            <div className="text-sm">
+            <div className="text-sm md:text-base">
               Purchased: {new Date(entry.entryDate).toLocaleString()}
             </div>
             <div>
-              Cost:{" "}
-              <span className="text-white">
+              Cost:
+              <span className="text-white text-sm md:text-base">
                 {formatNumber(entry.cost)} CSPR
               </span>
             </div>
           </div>
         </div>
-        <div className="md:self-start w-full md:w-auto flex md:justify-end">
+        <div className="md:self-start w-full md:w-auto flex md:flex-col md:items-end md:justify-end">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -208,6 +249,21 @@ function PendingEntryCard({
               )}
             </Tooltip>
           </TooltipProvider>
+          {/* Transaction links under the action button (right-aligned) */}
+          <div className="mt-2 flex flex-wrap justify-end gap-2">
+            {entry.entryDeployHash && (
+              <TxnPill label="Enter" hash={entry.entryDeployHash} />
+            )}
+            {entry.requestDeployHash && (
+              <TxnPill label="Request" hash={entry.requestDeployHash} />
+            )}
+            {entry.fulfillDeployHash && (
+              <TxnPill label="Fulfill" hash={entry.fulfillDeployHash} />
+            )}
+            {entry.settleDeployHash && (
+              <TxnPill label="Settlement" hash={entry.settleDeployHash} />
+            )}
+          </div>
         </div>
       </div>
     </motion.div>
@@ -224,6 +280,11 @@ interface LotteryEntry {
   prizeAmount?: number;
   settledDate?: string;
   awaitingFulfillment?: boolean;
+  entryDeployHash?: string;
+  isPlaceholder?: boolean;
+  requestDeployHash?: string;
+  fulfillDeployHash?: string;
+  settleDeployHash?: string;
 }
 
 interface CasperAccount {
@@ -238,6 +299,10 @@ interface DashboardProps {
   onFulfillment?: (requestId: string) => void;
   onRefresh?: () => void | Promise<void>;
   onAwaitSettlement?: (requestId: string) => void;
+  onTxnUpdate?: (
+    requestId: string,
+    meta: { requestDeployHash?: string; fulfillDeployHash?: string }
+  ) => void;
 }
 
 export function Dashboard({
@@ -248,6 +313,7 @@ export function Dashboard({
   onFulfillment,
   onRefresh,
   onAwaitSettlement,
+  onTxnUpdate,
 }: DashboardProps) {
   const [settlingRequests, setSettlingRequests] = useState<Set<string>>(
     new Set()
@@ -296,9 +362,10 @@ export function Dashboard({
   const handleSettle = async (entry: LotteryEntry) => {
     if (entry.awaitingFulfillment) {
       toast.info("Still awaiting randomness", {
-        description: "Please wait for the Autonom oracle to fulfill this request.",
+        description:
+          "Please wait for the Autonom oracle to fulfill this request.",
         style: {
-          background: "#1a0f2e",
+          background: "#202020",
           color: "#00ffff",
           border: "2px solid #00ffff",
         },
@@ -310,7 +377,7 @@ export function Dashboard({
       toast.error("Connect your wallet", {
         description: "You need to connect CSPR.click before settling a ticket.",
         style: {
-          background: "#1a0f2e",
+          background: "#202020",
           color: "#ff00ff",
           border: "2px solid #ff00ff",
         },
@@ -355,14 +422,16 @@ export function Dashboard({
             });
 
             if (result.status === "success") {
-              toast.success("Settlement deploy sent!", {
-                description: "We'll refresh your ticket once the transaction is processed.",
+              toast.success("Settlement transaction sent!", {
+                description:
+                  "We'll refresh your ticket once the transaction is processed.",
                 action: {
                   label: "View",
-                  onClick: () => window.open(getExplorerUrl(result.deployHash), "_blank"),
+                  onClick: () =>
+                    window.open(getExplorerUrl(result.deployHash), "_blank"),
                 },
                 style: {
-                  background: "#1a0f2e",
+                  background: "#202020",
                   color: "#00ffff",
                   border: "2px solid #00ffff",
                 },
@@ -370,7 +439,8 @@ export function Dashboard({
               void onRefresh?.();
               onAwaitSettlement?.(entry.requestId);
             } else {
-              const raw = result.errorMessage || "Transaction reverted on-chain.";
+              const raw =
+                result.errorMessage || "Transaction reverted on-chain.";
               const isMissedEvent = /User\s*error\s*:\s*(3|4)/i.test(raw);
               const friendly = isMissedEvent
                 ? "Please contact the Casper Draw team. Unable to conclude."
@@ -379,7 +449,7 @@ export function Dashboard({
               toast.error("Settlement failed", {
                 description: friendly,
                 style: {
-                  background: "#1a0f2e",
+                  background: "#202020",
                   color: "#ff00ff",
                   border: "2px solid #ff00ff",
                 },
@@ -397,7 +467,7 @@ export function Dashboard({
                   ? statusError.message
                   : "Transaction was cancelled.",
               style: {
-                background: "#1a0f2e",
+                background: "#202020",
                 color: "#ff00ff",
                 border: "2px solid #ff00ff",
               },
@@ -416,7 +486,7 @@ export function Dashboard({
         description:
           error instanceof Error ? error.message : "Unknown error occurred.",
         style: {
-          background: "#1a0f2e",
+          background: "#202020",
           color: "#ff00ff",
           border: "2px solid #ff00ff",
         },
@@ -523,7 +593,9 @@ export function Dashboard({
             transition={{ delay: 0.4 }}
             className="h-full"
           >
-            <Card className={`bg-black/40 border-2 border-green-500/50 neon-glow-green stat-glow-green h-full flex flex-col transition-shadow`}>
+            <Card
+              className={`bg-black/40 border-2 border-green-500/50 neon-glow-green stat-glow-green h-full flex flex-col transition-shadow`}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-base md:text-lg text-white">
                   Net Profit (CSPR)
@@ -595,7 +667,9 @@ export function Dashboard({
                       <span className="flex items-center">
                         <Sparkles
                           className="w-4 h-4 mr-2"
-                          style={{ filter: "drop-shadow(0 2px 6px rgba(0,0,0,1))" }}
+                          style={{
+                            filter: "drop-shadow(0 2px 6px rgba(0,0,0,1))",
+                          }}
                         />
                         Buy Ticket
                       </span>
@@ -610,6 +684,7 @@ export function Dashboard({
                         isSettling={settlingRequests.has(entry.requestId)}
                         onSettle={() => handleSettle(entry)}
                         onFulfillment={onFulfillment}
+                        onTxnUpdate={onTxnUpdate}
                       />
                     ))}
                   </div>
@@ -656,9 +731,13 @@ export function Dashboard({
                         <div className="flex items-center justify-between gap-2 md:gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1 md:gap-2 mb-2 flex-wrap">
-            <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
-              Play #{parseInt(entry.playId, entry.playId.startsWith('0x') ? 16 : 10)}
-            </Badge>
+                              <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
+                                Ticket ID #
+                                {parseInt(
+                                  entry.playId,
+                                  entry.playId.startsWith("0x") ? 16 : 10
+                                )}
+                              </Badge>
                               <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
                                 Round #{entry.roundId}
                               </Badge>
@@ -682,24 +761,42 @@ export function Dashboard({
                               )}
                             </div>
                             <div className="text-sm md:text-base text-gray-400 space-y-1">
-                              <div className="text-sm">
+                              <div className="text-sm md:text-base">
                                 Settled:{" "}
                                 {entry.settledDate &&
                                   new Date(entry.settledDate).toLocaleString()}
                               </div>
-                              <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-4">
-                                <span>
-                                  Cost:{" "}
-                                  <span className="text-white">
+                              <div className="flex flex-col md:flex-row items-start md:items-center justify-start w-full text-left gap-1 md:gap-2">
+                                <span className="inline-flex items-center leading-none text-base md:text-lg origin-left scale-90 md:scale-90">
+                                  Cost:
+                                  <span className="text-white text-sm md:text-base">
                                     {formatNumber(entry.cost)} CSPR
                                   </span>
                                 </span>
                                 {entry.prizeAmount && entry.prizeAmount > 0 && (
-                                  <span className="text-yellow-300 neon-text-yellow">
-                                    Won: {formatNumber(entry.prizeAmount)} CSPR
+                                  <span className="inline-flex items-center leading-none text-yellow-300 neon-text-yellow text-base md:text-lg font-black transform -translate-y-px">
+                                    Won:{formatNumber(entry.prizeAmount)} CSPR
                                     🎉
                                   </span>
                                 )}
+                              </div>
+                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <TxnPill
+                                  label="Enter"
+                                  hash={entry.entryDeployHash}
+                                />
+                                <TxnPill
+                                  label="Request"
+                                  hash={entry.requestDeployHash}
+                                />
+                                <TxnPill
+                                  label="Fulfill"
+                                  hash={entry.fulfillDeployHash}
+                                />
+                                <TxnPill
+                                  label="Settlement"
+                                  hash={entry.settleDeployHash}
+                                />
                               </div>
                             </div>
                           </div>
@@ -726,7 +823,7 @@ export function Dashboard({
           </TabsContent>
         </Tabs>
       </div>
-
     </div>
   );
 }
+// TxnPill defined at module scope
