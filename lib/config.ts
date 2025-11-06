@@ -1,6 +1,7 @@
 /**
  * Application configuration from environment variables
  */
+import { MOTES_PER_CSPR, motesToCsprNumber, toDecimal } from "./decimal";
 
 export interface LotteryConfig {
   // Casper Network
@@ -48,7 +49,7 @@ function getConfig(): LotteryConfig {
 
   if (missing.length > 0) {
     throw new Error(
-      `Missing required environment variables: ${missing.join(', ')}`
+      `Missing required environment variables: ${missing.join(", ")}`
     );
   }
 
@@ -57,9 +58,13 @@ function getConfig(): LotteryConfig {
     rpcUrl: requiredVars.rpcUrl!,
     lotteryRngPackageHash: requiredVars.lotteryRngPackageHash!,
     coordinatorPackageHash: requiredVars.coordinatorPackageHash!,
-    ticketPriceCspr: parseFloat(requiredVars.ticketPriceCspr!),
-    lotteryFeeCspr: parseFloat(requiredVars.lotteryFeeCspr!),
-    gasPriceCspr: parseFloat(requiredVars.gasPriceCspr!),
+    ticketPriceCspr: parseFloat(
+      toDecimal(requiredVars.ticketPriceCspr!).toString()
+    ),
+    lotteryFeeCspr: parseFloat(
+      toDecimal(requiredVars.lotteryFeeCspr!).toString()
+    ),
+    gasPriceCspr: parseFloat(toDecimal(requiredVars.gasPriceCspr!).toString()),
     csprClickAppId: requiredVars.csprClickAppId!,
     csprClickDigest: process.env.NEXT_PUBLIC_CSPRCLICK_DIGEST,
     csprLiveUrl: requiredVars.csprLiveUrl!,
@@ -74,16 +79,14 @@ export const config = getConfig();
 /**
  * Convert CSPR to motes (1 CSPR = 1,000,000,000 motes)
  */
-export function csprToMotes(cspr: number): string {
-  const MOTES_PER_CSPR = 1_000_000_000;
-  return (cspr * MOTES_PER_CSPR).toString();
+export function csprToMotes(cspr: number | string): string {
+  const decimalValue = toDecimal(cspr);
+  return decimalValue.times(MOTES_PER_CSPR).toFixed(0);
 }
 
 /**
  * Convert motes to CSPR
  */
 export function motesToCspr(motes: string | number): number {
-  const MOTES_PER_CSPR = 1_000_000_000;
-  const motesNum = typeof motes === 'string' ? parseFloat(motes) : motes;
-  return motesNum / MOTES_PER_CSPR;
+  return motesToCsprNumber(motes);
 }

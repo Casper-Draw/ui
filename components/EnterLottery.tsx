@@ -77,9 +77,9 @@ export function EnterLottery({
     currentJackpotCspr === null || currentJackpotCspr === undefined
       ? "--"
       : formatNumber(prizePool);
-  const jackpotProbability = 10; // TODO: Query from contract
-  const consolationProbability = 25; // TODO: Query from contract
-  const maxConsolationPrize = 50; // TODO: Query from contract
+  const jackpotProbability = 0.5; // TODO: Query from contract
+  const consolationProbability = 20; // TODO: Query from contract
+  const maxConsolationPrize = 40; // TODO: Query from contract
   const currentRound = currentRoundId ?? 1;
   const currentPlayId = nextPlayIdHint ?? "0x??";
 
@@ -471,12 +471,12 @@ export function EnterLottery({
                   </div>
                   <div className="flex justify-between text-gray-400 text-sm md:text-base">
                     <span>Lottery Fee</span>
-                    <span className="text-white/70">
+                    <span className="text-white">
                       {formatNumber(lotteryFee)} CSPR
                     </span>
                   </div>
                   <div className="border-t border-purple-500/30 pt-2 flex justify-between text-sm md:text-base">
-                    <span className="text-white">To Prize Pool</span>
+                    <span className="text-cyan-500">To Prize Pool</span>
                     <span className="text-cyan-300">
                       {formatNumber(ticketPrice - lotteryFee)} CSPR
                     </span>

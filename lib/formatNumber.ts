@@ -1,35 +1,95 @@
+import Decimal from "decimal.js";
+import {
+  DecimalInput,
+  formatDecimal,
+  formatDecimalWithCommas,
+  toDecimal,
+} from "./decimal";
+
+const THOUSAND = new Decimal(1_000);
+const MILLION = new Decimal(1_000_000);
+const BILLION = new Decimal(1_000_000_000);
+
 /**
- * Formats numbers with K, M, B suffixes
- * @param num - The number to format
- * @param decimals - Number of decimal places (default: 1)
- * @returns Formatted string
+ * Formats numbers with optional K, M, B suffixes.
+ * Values are rounded to the specified number of decimal places (default 2)
+ * while trimming trailing zeros.
  */
-export function formatNumber(num: number, decimals: number = 1): string {
-  if (num >= 1_000_000_000) {
-    return (num / 1_000_000_000).toFixed(decimals).replace(/\.0$/, '') + 'B';
+export function formatNumber(
+  value: DecimalInput,
+  decimals: number = 2
+): string {
+  const decimalValue = toDecimal(value);
+
+  if (!decimalValue.isFinite()) {
+    return decimalValue.toString();
   }
-  if (num >= 1_000_000) {
-    return (num / 1_000_000).toFixed(decimals).replace(/\.0$/, '') + 'M';
+
+  const isNegative = decimalValue.isNegative();
+  const absValue = decimalValue.abs();
+
+  const sign = isNegative ? "-" : "";
+
+  if (absValue.greaterThanOrEqualTo(BILLION)) {
+    return (
+      sign +
+      formatDecimal(absValue.dividedBy(BILLION), decimals) +
+      "B"
+    );
   }
-  if (num > 999) {
-    return (num / 1_000).toFixed(decimals).replace(/\.0$/, '') + 'K';
+
+  if (absValue.greaterThanOrEqualTo(MILLION)) {
+    return (
+      sign +
+      formatDecimal(absValue.dividedBy(MILLION), decimals) +
+      "M"
+    );
   }
-  return num.toString();
+
+  if (absValue.greaterThanOrEqualTo(THOUSAND)) {
+    return (
+      sign +
+      formatDecimal(absValue.dividedBy(THOUSAND), decimals) +
+      "K"
+    );
+  }
+
+  return sign + formatDecimal(absValue, decimals);
 }
 
 /**
- * Formats numbers with commas for stats display
- * For millions and above, uses M/B suffix
- * For thousands, shows full number with comma separators
- * @param num - The number to format
- * @returns Formatted string with commas
+ * Formats numbers with comma separation.
+ * For M/B ranges, appends suffixes while applying the same rounding rules.
  */
-export function formatNumberWithCommas(num: number): string {
-  if (num >= 1_000_000_000) {
-    return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+export function formatNumberWithCommas(
+  value: DecimalInput,
+  decimals: number = 2
+): string {
+  const decimalValue = toDecimal(value);
+
+  if (!decimalValue.isFinite()) {
+    return decimalValue.toString();
   }
-  if (num >= 1_000_000) {
-    return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+
+  const isNegative = decimalValue.isNegative();
+  const absValue = decimalValue.abs();
+  const sign = isNegative ? "-" : "";
+
+  if (absValue.greaterThanOrEqualTo(BILLION)) {
+    return (
+      sign +
+      formatDecimal(absValue.dividedBy(BILLION), decimals) +
+      "B"
+    );
   }
-  return num.toLocaleString();
+
+  if (absValue.greaterThanOrEqualTo(MILLION)) {
+    return (
+      sign +
+      formatDecimal(absValue.dividedBy(MILLION), decimals) +
+      "M"
+    );
+  }
+
+  return sign + formatDecimalWithCommas(absValue, decimals);
 }

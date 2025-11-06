@@ -2,7 +2,10 @@
  * API client for Casper Draw Backend
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+import { motesToCsprNumber } from './decimal';
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export interface BackendLotteryPlay {
   play_id: string;
@@ -44,23 +47,20 @@ export interface LotteryEntry {
 /**
  * Convert motes to CSPR (divide by 1e9)
  */
-function motesToCspr(motes: string | number | bigint | null | undefined): number {
+function motesToCspr(
+  motes: string | number | bigint | null | undefined
+): number {
   if (motes === null || motes === undefined) {
     return 0;
   }
 
   try {
-    if (typeof motes === 'bigint') {
-      return Number(motes) / 1_000_000_000;
+    if (typeof motes === "bigint") {
+      return motesToCsprNumber(motes.toString());
     }
-
-    const numeric = typeof motes === 'number' ? motes : Number(motes);
-    if (Number.isNaN(numeric)) {
-      return 0;
-    }
-    return numeric / 1_000_000_000;
+    return motesToCsprNumber(motes);
   } catch (error) {
-    console.error('[API] Failed to convert motes to CSPR:', error);
+    console.error("[API] Failed to convert motes to CSPR:", error);
     return 0;
   }
 }

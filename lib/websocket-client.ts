@@ -65,6 +65,7 @@ export function useWaitForFulfillment(
     setIsWaiting(true);
 
     // Create socket connection
+    console.log('[WS] Creating socket connection', { url: WS_URL, requestId });
     const socket = io(WS_URL, {
       transports: ['websocket', 'polling'],
     });
@@ -72,8 +73,28 @@ export function useWaitForFulfillment(
     socketRef.current = socket;
 
     socket.on('connect', () => {
-      console.log(`[WS] Connected, subscribing to request_id: ${requestId}`);
+      console.log(`[WS] Connected to ${WS_URL} as socket ${socket.id}, subscribing to request_id: ${requestId}`);
       socket.emit('subscribe', requestId);
+    });
+
+    socket.on('reconnect_attempt', (attempt) => {
+      console.log(`[WS] Reconnect attempt ${attempt} for request_id: ${requestId}`);
+    });
+
+    socket.on('reconnect', (attempt) => {
+      console.log(`[WS] Reconnected after ${attempt} attempts for request_id: ${requestId}`);
+    });
+
+    socket.on('reconnect_failed', () => {
+      console.warn(`[WS] Reconnect failed for request_id: ${requestId}`);
+    });
+
+    socket.on('ping', () => {
+      console.log('[WS] Ping received from server');
+    });
+
+    socket.on('pong', () => {
+      console.log('[WS] Pong received from server');
     });
 
     socket.on('requested', (data: RequestedEvent) => {
@@ -113,6 +134,10 @@ export function useWaitForFulfillment(
     socket.on('connect_error', (error) => {
       console.error('[WS] Connection error:', error);
       setIsWaiting(false);
+    });
+
+    socket.on('error', (error) => {
+      console.error('[WS] Socket error event:', error);
     });
 
     // Cleanup on unmount
