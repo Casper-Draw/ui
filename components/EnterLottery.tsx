@@ -307,7 +307,7 @@ export function EnterLottery({
                           Jackpot
                         </span>
                       </div>
-                      <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/50 text-sm md:text-base whitespace-nowrap">
+                      <Badge className="bg-yellow-500/20 text-yellow-300 border-yellow-500/50 text-sm md:text-base w-32 flex items-center justify-center">
                         {jackpotProbability}% chance
                       </Badge>
                     </div>
@@ -318,7 +318,7 @@ export function EnterLottery({
                           Consolation Prize
                         </span>
                       </div>
-                      <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/50 text-sm md:text-base whitespace-nowrap">
+                      <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/50 text-sm md:text-base w-32 flex items-center justify-center">
                         {consolationProbability}% chance
                       </Badge>
                     </div>
@@ -329,7 +329,7 @@ export function EnterLottery({
                           No Win
                         </span>
                       </div>
-                      <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/50 text-sm md:text-base whitespace-nowrap">
+                      <Badge className="bg-gray-500/20 text-gray-300 border-gray-500/50 text-sm md:text-base w-32 flex items-center justify-center">
                         {100 - jackpotProbability - consolationProbability}%
                         chance
                       </Badge>

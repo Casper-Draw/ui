@@ -44,6 +44,14 @@ export interface LotteryEntry {
   settleDeployHash?: string;
 }
 
+export interface GlobalStats {
+  totalDraws: number;
+  totalPrizesCspr: number;
+  totalWageredCspr: number;
+  activePlayers: number;
+  avgSettlementMs: number;
+}
+
 /**
  * Convert motes to CSPR (divide by 1e9)
  */
@@ -183,6 +191,26 @@ export async function fetchPlayerPlays(
     console.error('[API] Failed to fetch player plays:', error);
     return [];
   }
+}
+
+export async function fetchGlobalStats(): Promise<GlobalStats> {
+  const response = await fetch(`${API_BASE_URL}/stats/global`, {
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch global stats: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+
+  return {
+    totalDraws: data.total_plays ?? 0,
+    totalPrizesCspr: motesToCsprNumber(data.total_prizes_paid ?? '0'),
+    totalWageredCspr: motesToCsprNumber(data.total_wagered ?? '0'),
+    activePlayers: data.active_players ?? 0,
+    avgSettlementMs: data.avg_settlement_ms ?? 0,
+  };
 }
 
 /**

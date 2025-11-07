@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { formatNumber } from "@/lib/formatNumber";
 import { useState, useEffect, useRef } from "react";
 import type { KeyboardEvent } from "react";
+import { fetchGlobalStats, type GlobalStats } from "@/lib/api";
 
 const casperIcon = "/assets/9d94ce1715be8ece5a22234eba0aa3e300a8d738.png";
 const casperLogo = "/assets/f40f97483ee0322d9cc298a55275f180f7353db4.png";
@@ -140,6 +141,7 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
       ? "--"
       : formatNumber(currentJackpotCspr);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [globalStats, setGlobalStats] = useState<GlobalStats | null>(null);
 
   useEffect(() => {
     audioRef.current = new Audio("/assets/harry.mp3");
@@ -150,6 +152,33 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
       }
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchGlobalStats()
+      .then((stats) => {
+        if (isMounted) {
+          setGlobalStats(stats);
+        }
+      })
+      .catch((error) => {
+        console.error("[LandingPage] Failed to fetch global stats:", error);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const totalWon = globalStats?.totalPrizesCspr ?? 0;
+  const totalDraws = globalStats?.totalDraws ?? 0;
+  const activeUsers = globalStats?.activePlayers ?? 0;
+  const settlementDisplay = "< 1m";
+
+  const totalWonDisplay = `${formatNumber(totalWon)}${totalWon > 0 ? "+" : ""}`;
+  const totalDrawsDisplay = `${formatNumber(totalDraws)}${
+    totalDraws > 0 ? "+" : ""
+  }`;
+  const usersDisplay = formatNumber(activeUsers);
 
   const handleSecretStarClick = () => {
     if (!audioRef.current) {
@@ -236,7 +265,7 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
                       whileHover={{ scale: 1.05 }}
                     >
                       <div className="text-3xl text-pink-400 neon-text-pink mb-1.5">
-                        {formatNumber(20000000)}+
+                        {totalWonDisplay}
                       </div>
                       <div className="text-sm text-white/90 leading-tight">
                         Total CSPR Won
@@ -251,7 +280,7 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
                       whileHover={{ scale: 1.05 }}
                     >
                       <div className="text-3xl text-pink-400 neon-text-pink mb-1.5">
-                        {formatNumber(20000)}+
+                        {totalDrawsDisplay}
                       </div>
                       <div className="text-sm text-white/90 leading-tight">
                         Total Draws
@@ -269,7 +298,7 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
                       whileHover={{ scale: 1.05 }}
                     >
                       <div className="text-3xl text-pink-400 neon-text-pink mb-1.5">
-                        {formatNumber(12394)}
+                        {usersDisplay}
                       </div>
                       <div className="text-sm text-white/90 leading-tight">
                         Users
@@ -284,7 +313,7 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
                       whileHover={{ scale: 1.05 }}
                     >
                       <div className="text-3xl text-pink-400 neon-text-pink mb-1.5">
-                        &lt; 1m
+                        {settlementDisplay}
                       </div>
                       <div className="text-sm text-white/90 leading-tight">
                         Settlement Time
@@ -298,7 +327,7 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
                     whileHover={{ scale: 1.05 }}
                   >
                     <div className="text-4xl text-pink-400 neon-text-pink mb-2">
-                      {formatNumber(20000000)}+
+                      {totalWonDisplay}
                     </div>
                     <div className="text-base text-white/90 leading-tight">
                       Total CSPR Won
@@ -312,7 +341,7 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
                     whileHover={{ scale: 1.05 }}
                   >
                     <div className="text-4xl text-pink-400 neon-text-pink mb-2">
-                      {formatNumber(20000)}+
+                      {totalDrawsDisplay}
                     </div>
                     <div className="text-base text-white/90 leading-tight">
                       Total Draws
@@ -326,7 +355,7 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
                     whileHover={{ scale: 1.05 }}
                   >
                     <div className="text-4xl text-pink-400 neon-text-pink mb-2">
-                      {formatNumber(12394)}
+                      {usersDisplay}
                     </div>
                     <div className="text-base text-white/90 leading-tight">
                       Users
@@ -340,7 +369,7 @@ export function LandingPage({ onNavigate, currentJackpotCspr }: LandingPageProps
                     whileHover={{ scale: 1.05 }}
                   >
                     <div className="text-4xl text-pink-400 neon-text-pink mb-2">
-                      &lt; 1m
+                      {settlementDisplay}
                     </div>
                     <div className="text-base text-white/90 leading-tight">
                       Settlement Time
