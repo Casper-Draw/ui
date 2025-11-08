@@ -214,7 +214,7 @@ function PendingEntryCard({
             </div>
           </div>
         </div>
-        <div className="md:self-start w-full md:w-auto flex md:flex-col md:items-end md:justify-end">
+        <div className="md:self-start w-full md:w-auto flex flex-col md:items-end md:justify-end">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -250,7 +250,7 @@ function PendingEntryCard({
             </Tooltip>
           </TooltipProvider>
           {/* Transaction links under the action button (right-aligned) */}
-          <div className="mt-2 flex flex-wrap justify-end gap-2">
+          <div className="mt-2 flex flex-wrap justify-start md:justify-end gap-2">
             {entry.entryDeployHash && (
               <TxnPill label="Enter" hash={entry.entryDeployHash} />
             )}
@@ -720,7 +720,7 @@ export function Dashboard({
                         key={`${entry.requestId}-${entry.playId}`}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className={`bg-black/30 rounded-xl p-3 md:p-4 border ${
+                        className={`bg-black/30 rounded-xl p-4 md:p-4 border ${
                           entry.status === "won-jackpot"
                             ? "border-yellow-500/50 neon-glow-yellow"
                             : entry.status === "won-consolation"
@@ -728,9 +728,9 @@ export function Dashboard({
                             : "border-gray-500/30"
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-2 md:gap-4">
+                        <div className="flex items-center justify-start md:justify-between gap-2 md:gap-4">
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1 md:gap-2 mb-2 flex-wrap">
+                            <div className="flex items-center justify-start gap-1 md:gap-2 mb-3 md:mb-2 flex-wrap">
                               <Badge className="bg-pink-500/20 text-pink-300 border-pink-500/50 text-sm">
                                 Ticket ID #
                                 {parseInt(
@@ -760,27 +760,26 @@ export function Dashboard({
                                 </Badge>
                               )}
                             </div>
-                            <div className="text-sm md:text-base text-gray-400 space-y-1">
-                              <div className="text-sm md:text-base">
+                            <div className="text-sm md:text-base text-gray-400 space-y-1.5 md:space-y-1">
+                              <div className="text-xs md:text-base">
                                 Settled:{" "}
                                 {entry.settledDate &&
                                   new Date(entry.settledDate).toLocaleString()}
                               </div>
-                              <div className="flex flex-col md:flex-row items-start md:items-center justify-start w-full text-left gap-1 md:gap-2">
-                                <span className="inline-flex items-center leading-none text-base md:text-lg origin-left scale-90 md:scale-90">
-                                  Cost:
-                                  <span className="text-white text-sm md:text-base">
-                                    {formatNumber(entry.cost)} CSPR
-                                  </span>
+                              <div className="text-xs md:text-base">
+                                Cost:{" "}
+                                <span className="text-white">
+                                  {formatNumber(entry.cost)} CSPR
                                 </span>
-                                {entry.prizeAmount && entry.prizeAmount > 0 && (
-                                  <span className="inline-flex items-center leading-none text-yellow-300 neon-text-yellow text-base md:text-lg font-black transform -translate-y-px">
-                                    Won:{formatNumber(entry.prizeAmount)} CSPR
-                                    🎉
-                                  </span>
-                                )}
                               </div>
-                              <div className="mt-2 flex flex-wrap items-center gap-2">
+                              {entry.prizeAmount && entry.prizeAmount > 0 && (
+                                <div className="mt-2 md:mt-1 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 md:p-2 inline-block">
+                                  <span className="inline-flex items-center leading-none text-yellow-300 neon-text-yellow text-base md:text-lg font-black">
+                                    Won:{formatNumber(entry.prizeAmount)} CSPR 🎉
+                                  </span>
+                                </div>
+                              )}
+                              <div className="mt-3 md:mt-2 flex flex-wrap items-center justify-start gap-2">
                                 <TxnPill
                                   label="Enter"
                                   hash={entry.entryDeployHash}
@@ -800,15 +799,15 @@ export function Dashboard({
                               </div>
                             </div>
                           </div>
-                          <div className="text-right flex-shrink-0">
+                          <div className="text-right flex-shrink-0 hidden md:block">
                             {entry.status === "won-jackpot" && (
-                              <div className="text-3xl md:text-5xl">🏆</div>
+                              <div className="text-5xl">🏆</div>
                             )}
                             {entry.status === "won-consolation" && (
-                              <div className="text-3xl md:text-5xl">🎉</div>
+                              <div className="text-5xl">🎉</div>
                             )}
                             {entry.status === "lost" && (
-                              <div className="text-3xl md:text-5xl opacity-30">
+                              <div className="text-5xl opacity-30">
                                 😔
                               </div>
                             )}
