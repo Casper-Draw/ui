@@ -578,6 +578,12 @@ export default function AppContainer() {
   };
 
   const handleNavigate = (page: string) => {
+    // Block dashboard access if wallet not connected
+    if (page === "dashboard" && !activeAccount?.public_key) {
+      console.log("[AppContainer] Dashboard access blocked - wallet not connected");
+      return;
+    }
+
     setCurrentPage(page);
     window.scrollTo(0, 0);
 

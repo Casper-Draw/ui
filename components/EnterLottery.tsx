@@ -497,12 +497,23 @@ export function EnterLottery({
 
                 {/* View Dashboard */}
                 <Button
-                  onClick={() => onNavigate("dashboard")}
+                  onClick={() => {
+                    if (!activeAccount) {
+                      onConnect();
+                      return;
+                    }
+                    onNavigate("dashboard");
+                  }}
+                  disabled={!activeAccount}
                   variant="outline"
-                  className="w-full border-2 border-cyan-400 text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20 hover:text-cyan-400 neon-glow-cyan cursor-pointer"
+                  className={
+                    !activeAccount
+                      ? "w-full border-2 border-cyan-400/40 text-cyan-400/40 bg-cyan-400/5 cursor-not-allowed opacity-50"
+                      : "w-full border-2 border-cyan-400 text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20 hover:text-cyan-400 neon-glow-cyan cursor-pointer"
+                  }
                 >
                   <TrendingUp className="w-4 h-4 mr-2" />
-                  View My Tickets
+                  {activeAccount ? "View My Tickets" : "Connect to View Tickets"}
                 </Button>
               </CardContent>
             </Card>
