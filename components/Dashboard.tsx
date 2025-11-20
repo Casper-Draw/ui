@@ -22,6 +22,7 @@ import {
   XCircle,
   Zap,
   ExternalLink,
+  Undo2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
@@ -29,6 +30,7 @@ import { formatNumber } from "@/lib/formatNumber";
 import { useWaitForFulfillment } from "@/lib/websocket-client";
 import {
   prepareSettleLotteryTransaction,
+  prepareClaimRefundTransaction,
   handleTransactionStatus,
   getCsprClick,
   getExplorerUrl,
@@ -63,19 +65,26 @@ const TxnPill = ({ label, hash }: { label: string; hash?: string }) => (
 function PendingEntryCard({
   entry,
   isSettling,
+  isRefunding,
   onSettle,
+  onRefund,
   onFulfillment,
   onTxnUpdate,
 }: {
   entry: LotteryEntry;
   isSettling: boolean;
+  isRefunding: boolean;
   onSettle: () => void;
+  onRefund: () => void;
   onFulfillment?: (requestId: string) => void;
   onTxnUpdate?: (
     requestId: string,
     meta: { requestDeployHash?: string; fulfillDeployHash?: string }
   ) => void;
 }) {
+  // Track elapsed time since entry creation for refund window
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const REFUND_WINDOW_MS = 60_000; // 1 minute
   // Use WebSocket hook only if entry has awaitingFulfillment flag AND real request_id
   // Real request_ids are short hex format: "0x21" (not long deploy hashes)
   const isRealRequestId =
@@ -98,6 +107,44 @@ function PendingEntryCard({
   );
 
   const hasNotifiedRef = useRef(false);
+
+  // Track elapsed time for refund eligibility
+  useEffect(() => {
+    const entryTime = new Date(entry.entryDate).getTime();
+    const updateElapsed = () => {
+      setElapsedMs(Date.now() - entryTime);
+    };
+
+    // Initial update
+    updateElapsed();
+
+    // Update every second while pending and not fulfilled
+    const intervalId = setInterval(updateElapsed, 1000);
+
+    return () => clearInterval(intervalId);
+  }, [entry.entryDate]);
+
+  // Determine refund button visibility and state
+  const canShowRefund = (() => {
+    // Don't show if already fulfilled
+    if (entry.fulfillDeployHash || isFulfilled) return false;
+
+    // For session-created tickets (awaitingFulfillment), show after 1 minute
+    if (entry.awaitingFulfillment === true) {
+      return elapsedMs >= REFUND_WINDOW_MS;
+    }
+
+    // For tickets loaded on page reload (no awaitingFulfillment flag),
+    // show immediately if no fulfillment hash exists
+    return true;
+  })();
+
+  // Calculate countdown for tickets within the refund window
+  const remainingSeconds = Math.max(0, Math.ceil((REFUND_WINDOW_MS - elapsedMs) / 1000));
+  const showCountdown = entry.awaitingFulfillment === true &&
+    !entry.fulfillDeployHash &&
+    !isFulfilled &&
+    elapsedMs < REFUND_WINDOW_MS;
 
   // Show toast when fulfilled
   useEffect(() => {
@@ -215,40 +262,88 @@ function PendingEntryCard({
           </div>
         </div>
         <div className="md:self-start w-full md:w-auto flex flex-col md:items-end md:justify-end">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={onSettle}
-                  disabled={isButtonDisabled}
-                  className="bg-neon-pink hover:bg-neon-pink/90 text-white hover:scale-105 transition-transform cursor-pointer w-full md:w-auto text-base md:text-lg whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed rounded-xl px-5 py-2"
-                >
-                  {isSettling ? (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{
-                          duration: 1,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                      >
-                        <Zap className="w-4 h-4 mr-2" />
-                      </motion.div>
-                      Settling...
-                    </>
-                  ) : (
-                    <>Check Results</>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              {tooltipMessage && (
-                <TooltipContent>
-                  <p>{tooltipMessage}</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={onSettle}
+                    disabled={isButtonDisabled}
+                    className="bg-neon-pink hover:bg-neon-pink/90 text-white hover:scale-105 transition-transform cursor-pointer w-full md:w-auto text-base md:text-lg whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed rounded-xl px-5 py-2"
+                  >
+                    {isSettling ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: "linear",
+                          }}
+                        >
+                          <Zap className="w-4 h-4 mr-2" />
+                        </motion.div>
+                        Settling...
+                      </>
+                    ) : (
+                      <>Check Results</>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                {tooltipMessage && (
+                  <TooltipContent>
+                    <p>{tooltipMessage}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+
+            {/* Refund button - shows when eligible */}
+            {canShowRefund && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={onRefund}
+                      disabled={isRefunding}
+                      className="bg-orange-600 hover:bg-orange-500 text-white hover:scale-105 transition-transform cursor-pointer w-full md:w-auto text-base md:text-lg whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed rounded-xl px-5 py-2"
+                    >
+                      {isRefunding ? (
+                        <>
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 1,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }}
+                          >
+                            <Undo2 className="w-4 h-4 mr-2" />
+                          </motion.div>
+                          Refunding...
+                        </>
+                      ) : (
+                        <>
+                          <Undo2 className="w-4 h-4 mr-2" />
+                          Claim Refund
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Randomness not fulfilled within 1 minute. Claim your refund.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {/* Show countdown timer when waiting for refund eligibility */}
+            {showCountdown && (
+              <div className="text-sm text-gray-400 text-center md:text-right mt-1">
+                Refund available in {remainingSeconds}s
+              </div>
+            )}
+          </div>
           {/* Transaction links under the action button (right-aligned) */}
           <div className="mt-2 flex flex-wrap justify-start md:justify-end gap-2">
             {entry.entryDeployHash && (
@@ -262,6 +357,9 @@ function PendingEntryCard({
             )}
             {entry.settleDeployHash && (
               <TxnPill label="Settlement" hash={entry.settleDeployHash} />
+            )}
+            {entry.refundDeployHash && (
+              <TxnPill label="Refund" hash={entry.refundDeployHash} />
             )}
           </div>
         </div>
@@ -285,6 +383,7 @@ interface LotteryEntry {
   requestDeployHash?: string;
   fulfillDeployHash?: string;
   settleDeployHash?: string;
+  refundDeployHash?: string;
 }
 
 interface CasperAccount {
@@ -316,6 +415,9 @@ export function Dashboard({
   onTxnUpdate,
 }: DashboardProps) {
   const [settlingRequests, setSettlingRequests] = useState<Set<string>>(
+    new Set()
+  );
+  const [refundingRequests, setRefundingRequests] = useState<Set<string>>(
     new Set()
   );
   const hasInitializedEntriesRef = useRef(false);
@@ -483,6 +585,127 @@ export function Dashboard({
       });
 
       toast.error("Failed to submit settlement", {
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred.",
+        style: {
+          background: "#202020",
+          color: "#ff00ff",
+          border: "2px solid #ff00ff",
+        },
+      });
+    }
+  };
+
+  const handleRefund = async (entry: LotteryEntry) => {
+    if (!activeAccount?.public_key) {
+      toast.error("Connect your wallet", {
+        description: "You need to connect CSPR.click before claiming a refund.",
+        style: {
+          background: "#202020",
+          color: "#ff00ff",
+          border: "2px solid #ff00ff",
+        },
+      });
+      return;
+    }
+
+    setRefundingRequests((prev) => {
+      const next = new Set(prev);
+      next.add(entry.requestId);
+      return next;
+    });
+
+    try {
+      const playerPublicKey = PublicKey.fromHex(activeAccount.public_key);
+      const transaction = await prepareClaimRefundTransaction(
+        playerPublicKey,
+        entry.requestId
+      );
+
+      const csprclick = getCsprClick();
+      if (!csprclick) {
+        throw new Error("CSPR.click wallet not available");
+      }
+
+      await csprclick.send(
+        { Version1: transaction.toJSON() },
+        playerPublicKey.toHex(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (status: string, data?: any) => {
+          console.log("[Dashboard] Refund transaction status:", status, data);
+          try {
+            const result = handleTransactionStatus(status, data);
+            if (!result) {
+              return;
+            }
+
+            setRefundingRequests((prev) => {
+              const next = new Set(prev);
+              next.delete(entry.requestId);
+              return next;
+            });
+
+            if (result.status === "success") {
+              toast.success("Refund transaction sent!", {
+                description:
+                  "Your ticket price will be refunded once the transaction is processed.",
+                action: {
+                  label: "View",
+                  onClick: () =>
+                    window.open(getExplorerUrl(result.deployHash), "_blank"),
+                },
+                style: {
+                  background: "#202020",
+                  color: "#00ffff",
+                  border: "2px solid #00ffff",
+                },
+              });
+              void onRefresh?.();
+            } else {
+              const raw =
+                result.errorMessage || "Refund transaction reverted on-chain.";
+              const isNotEligible = /User\s*error\s*:\s*7/i.test(raw);
+              const friendly = isNotEligible
+                ? "Refund window has not passed yet or randomness was already fulfilled."
+                : raw;
+
+              toast.error("Refund failed", {
+                description: friendly,
+                style: {
+                  background: "#202020",
+                  color: "#ff00ff",
+                  border: "2px solid #ff00ff",
+                },
+              });
+            }
+          } catch (statusError) {
+            setRefundingRequests((prev) => {
+              const next = new Set(prev);
+              next.delete(entry.requestId);
+              return next;
+            });
+            toast.error("Refund error", {
+              description:
+                statusError instanceof Error
+                  ? statusError.message
+                  : "Transaction was cancelled.",
+              style: {
+                background: "#202020",
+                color: "#ff00ff",
+                border: "2px solid #ff00ff",
+              },
+            });
+          }
+        }
+      );
+    } catch (error) {
+      setRefundingRequests((prev) => {
+        const next = new Set(prev);
+        next.delete(entry.requestId);
+        return next;
+      });
+
+      toast.error("Failed to submit refund", {
         description:
           error instanceof Error ? error.message : "Unknown error occurred.",
         style: {
@@ -682,7 +905,9 @@ export function Dashboard({
                         key={`${entry.requestId}-${entry.playId}`}
                         entry={entry}
                         isSettling={settlingRequests.has(entry.requestId)}
+                        isRefunding={refundingRequests.has(entry.requestId)}
                         onSettle={() => handleSettle(entry)}
+                        onRefund={() => handleRefund(entry)}
                         onFulfillment={onFulfillment}
                         onTxnUpdate={onTxnUpdate}
                       />

@@ -252,3 +252,58 @@ export async function prepareSettleLotteryTransaction(
     );
   }
 }
+
+/**
+ * Prepare claim_refund transaction for the LotteryRng contract.
+ *
+ * Claims a refund for a pending play that hasn't been fulfilled within the
+ * refund window (1 minute). Returns the full ticket price to the player.
+ *
+ * @param playerPublicKey - The player's Casper public key
+ * @param requestId - Request ID to refund (hex or decimal string)
+ */
+export async function prepareClaimRefundTransaction(
+  playerPublicKey: PublicKey,
+  requestId: string
+): Promise<Transaction> {
+  try {
+    const packageHashHex = config.lotteryRngPackageHash.replace("hash-", "");
+    const gasPriceInMotes = csprToMotes(config.gasPriceCspr);
+
+    const normalizedRequestId = (() => {
+      const trimmed = requestId.trim();
+      if (!trimmed) {
+        throw new Error("Invalid request_id: empty");
+      }
+      if (trimmed.startsWith("0x") || trimmed.startsWith("0X")) {
+        return BigInt(trimmed);
+      }
+      if (/^\d+$/.test(trimmed)) {
+        return BigInt(trimmed);
+      }
+      return BigInt(`0x${trimmed}`);
+    })();
+
+    const runtimeArgs = Args.fromMap({
+      request_id: CLValue.newCLUInt256(normalizedRequestId),
+    });
+
+    const transaction = new ContractCallBuilder()
+      .from(playerPublicKey)
+      .byPackageHash(packageHashHex)
+      .entryPoint("claim_refund")
+      .runtimeArgs(runtimeArgs)
+      .payment(parseInt(gasPriceInMotes, 10))
+      .chainName(config.chainName)
+      .build();
+
+    return transaction;
+  } catch (error) {
+    console.error("Error preparing claim_refund transaction:", error);
+    throw new Error(
+      `Failed to prepare refund transaction: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`
+    );
+  }
+}

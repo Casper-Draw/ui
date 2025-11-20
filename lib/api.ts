@@ -42,6 +42,10 @@ export interface LotteryEntry {
   requestDeployHash?: string;
   fulfillDeployHash?: string;
   settleDeployHash?: string;
+  refundDeployHash?: string;
+  // UI state flags
+  awaitingFulfillment?: boolean;
+  isPlaceholder?: boolean;
 }
 
 export interface GlobalStats {

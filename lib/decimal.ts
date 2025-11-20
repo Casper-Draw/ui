@@ -46,7 +46,10 @@ export function formatDecimal(
     Decimal.ROUND_HALF_UP
   );
   const fixed = rounded.toFixed(decimalPlaces);
-  const trimmed = fixed.replace(/\.?0+$/, "");
+  // Remove trailing zeros after last significant digit, then remove trailing dot
+  const trimmed = fixed.replace(/(\.\d*[1-9])0+$/, '$1').replace(/\.0*$/, '');
+
+  console.log('[formatDecimal] input:', value, '→ fixed:', fixed, '→ trimmed:', trimmed);
 
   if (trimmed === "" || trimmed === "-0") {
     return "0";
