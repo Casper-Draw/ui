@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -62,7 +62,7 @@ const TxnPill = ({ label, hash }: { label: string; hash?: string }) => (
 );
 
 // Component for handling individual pending entry with WebSocket
-function PendingEntryCard({
+const PendingEntryCard = React.memo(function PendingEntryCard({
   entry,
   isSettling,
   isRefunding,
@@ -111,18 +111,46 @@ function PendingEntryCard({
   // Track elapsed time for refund eligibility
   useEffect(() => {
     const entryTime = new Date(entry.entryDate).getTime();
+    let intervalId: NodeJS.Timeout | null = null;
+
     const updateElapsed = () => {
-      setElapsedMs(Date.now() - entryTime);
+      const elapsed = Date.now() - entryTime;
+      setElapsedMs(elapsed);
+
+      // Stop timer if conditions met
+      if (
+        elapsed >= REFUND_WINDOW_MS ||
+        entry.fulfillDeployHash ||
+        isFulfilled ||
+        entry.status !== 'pending'
+      ) {
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      }
     };
 
     // Initial update
     updateElapsed();
 
-    // Update every second while pending and not fulfilled
-    const intervalId = setInterval(updateElapsed, 1000);
+    // Only start interval if countdown is needed
+    const shouldRunTimer =
+      !entry.fulfillDeployHash &&
+      !isFulfilled &&
+      entry.status === 'pending' &&
+      entry.awaitingFulfillment === true;
 
-    return () => clearInterval(intervalId);
-  }, [entry.entryDate]);
+    if (shouldRunTimer) {
+      intervalId = setInterval(updateElapsed, 1000);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [entry.entryDate, entry.fulfillDeployHash, isFulfilled, entry.status, entry.awaitingFulfillment]);
 
   // Determine refund button visibility and state
   const canShowRefund = (() => {
@@ -377,7 +405,7 @@ function PendingEntryCard({
       </div>
     </motion.div>
   );
-}
+});
 
 interface LotteryEntry {
   requestId: string;
@@ -437,19 +465,41 @@ export function Dashboard({
   );
 
   // Separate entries by status
-  const pendingEntries = entries.filter((e) => e.status === "pending");
-  const settledEntries = entries.filter((e) => e.status !== "pending");
-  const winnings = entries.filter(
-    (e) => e.status === "won-jackpot" || e.status === "won-consolation"
+  const pendingEntries = useMemo(
+    () => entries.filter((e) => e.status === "pending"),
+    [entries]
+  );
+
+  const settledEntries = useMemo(
+    () => entries.filter((e) => e.status !== "pending"),
+    [entries]
+  );
+
+  const winnings = useMemo(
+    () => entries.filter(
+      (e) => e.status === "won-jackpot" || e.status === "won-consolation"
+    ),
+    [entries]
   );
 
   // Calculate stats
-  const totalWon = winnings.reduce(
-    (sum, entry) => sum + (entry.prizeAmount || 0),
-    0
+  const totalWon = useMemo(
+    () => winnings.reduce(
+      (sum, entry) => sum + (entry.prizeAmount || 0),
+      0
+    ),
+    [winnings]
   );
-  const totalSpent = entries.reduce((sum, entry) => sum + entry.cost, 0);
-  const netProfit = totalWon - totalSpent;
+
+  const totalSpent = useMemo(
+    () => entries.reduce((sum, entry) => sum + entry.cost, 0),
+    [entries]
+  );
+
+  const netProfit = useMemo(
+    () => totalWon - totalSpent,
+    [totalWon, totalSpent]
+  );
 
   useEffect(() => {
     if (!hasInitializedEntriesRef.current) {
@@ -472,7 +522,7 @@ export function Dashboard({
     });
   }, [entries, onWinningCelebration]);
 
-  const handleSettle = async (entry: LotteryEntry) => {
+  const handleSettle = useCallback(async (entry: LotteryEntry) => {
     if (entry.awaitingFulfillment) {
       toast.info("Still awaiting randomness", {
         description:
@@ -605,9 +655,9 @@ export function Dashboard({
         },
       });
     }
-  };
+  }, [activeAccount, onRefresh, onAwaitSettlement]);
 
-  const handleRefund = async (entry: LotteryEntry) => {
+  const handleRefund = useCallback(async (entry: LotteryEntry) => {
     if (!activeAccount?.public_key) {
       toast.error("Connect your wallet", {
         description: "You need to connect CSPR.click before claiming a refund.",
@@ -726,7 +776,7 @@ export function Dashboard({
         },
       });
     }
-  };
+  }, [activeAccount, onRefresh]);
 
   return (
     <div className="min-h-screen py-4 md:py-8 px-4">

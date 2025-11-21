@@ -315,7 +315,7 @@ export function EnterLottery({
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-cyan-400 neon-glow-cyan flex-shrink-0"></div>
                         <span className="text-white text-base md:text-lg">
-                          Consolation Prize
+                          Consolation
                         </span>
                       </div>
                       <Badge className="bg-cyan-500/20 text-cyan-300 border-cyan-500/50 text-sm md:text-base w-32 flex items-center justify-center">
@@ -378,12 +378,12 @@ export function EnterLottery({
 
                     {/* Show transaction hash if available */}
                     {currentDeployHash && (
-                      <div className="bg-black/30 rounded-xl p-3 border border-cyan-500/30">
+                      <div className="bg-black/30 rounded-xl p-3 border border-cyan-500/30 max-w-full w-full">
                         <p className="text-sm text-gray-400 mb-1">
                           Transaction Hash:
                         </p>
-                        <div className="flex items-center gap-2 min-w-0">
-                          <p className="text-cyan-300 font-mono text-xs flex-1 min-w-0 truncate">
+                        <div className="flex items-center gap-2 min-w-0 w-full">
+                          <p className="text-cyan-300 font-mono text-[10px] sm:text-xs flex-1 min-w-0 break-all leading-relaxed">
                             {currentDeployHash}
                           </p>
                           <button
