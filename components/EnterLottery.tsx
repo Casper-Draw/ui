@@ -144,7 +144,7 @@ export function EnterLottery({
                 onEntrySubmit(entry);
 
                 // Success toast with link to explorer
-                toast.success("Ticket purchased successfully!", {
+                toast.success("Ticket purchased!", {
                   description: "Transaction confirmed on Casper Network",
                   duration: 5000,
                   action: {
@@ -513,7 +513,9 @@ export function EnterLottery({
                   }
                 >
                   <TrendingUp className="w-4 h-4 mr-2" />
-                  {activeAccount ? "View My Tickets" : "Connect to View Tickets"}
+                  {activeAccount
+                    ? "View My Tickets"
+                    : "Connect to View Tickets"}
                 </Button>
               </CardContent>
             </Card>

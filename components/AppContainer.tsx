@@ -45,6 +45,7 @@ interface LotteryEntry {
   requestDeployHash?: string;
   fulfillDeployHash?: string;
   settleDeployHash?: string;
+  refundDeployHash?: string;
 }
 
 interface WinningState {
@@ -602,6 +603,21 @@ export default function AppContainer() {
     }
 
     if (entry.status === "lost") {
+      // Check if this is a refund
+      if (entry.refundDeployHash) {
+        toast.success("Refund Processed", {
+          description: "You have been credited with the original deposit of 50 CSPR",
+          style: {
+            background: "#202020",
+            color: "#ff8c00",
+            border: "2px solid #ff8c00",
+          },
+        });
+        outcomeNotifiedRef.current.add(rid);
+        return;
+      }
+
+      // Regular loss
       toast.info("Uh Oh! You did not win", {
         description: "Better luck next round!",
         style: {

@@ -13,13 +13,15 @@ export interface BackendLotteryPlay {
   round_id: number;
   player: string;
   timestamp: string;
-  status: 'pending' | 'settled';
+  status: 'pending' | 'settled' | 'refunded';
   entry_deploy_hash: string;
   prize_amount?: string;
   is_jackpot?: boolean;
   jackpot_amount?: string;
   settled_at?: string;
   settle_deploy_hash?: string;
+  refund_deploy_hash?: string;
+  refunded_at?: string;
   created_at?: string;
   updated_at?: string;
   // Nested relation from randomness_requests join
@@ -123,6 +125,9 @@ export function backendPlayToEntry(play: BackendLotteryPlay, ticketCost: number 
 
   if (play.status === 'pending') {
     status = 'pending';
+  } else if (play.status === 'refunded') {
+    // Refunded plays are treated as 'lost' status with refundDeployHash set
+    status = 'lost';
   } else {
     // Settled
     const payoutMotes = normalizePayoutMotes(play);
@@ -149,6 +154,7 @@ export function backendPlayToEntry(play: BackendLotteryPlay, ticketCost: number 
     settledDate: play.settled_at,
     entryDeployHash: play.entry_deploy_hash,
     settleDeployHash: play.settle_deploy_hash,
+    refundDeployHash: play.refund_deploy_hash,
     requestDeployHash: (Array.isArray((play as any).randomness_requests)
       ? (play as any).randomness_requests?.[0]?.request_deploy_hash
       : (play as any).randomness_requests?.request_deploy_hash) as string | undefined,

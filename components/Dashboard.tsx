@@ -140,8 +140,12 @@ function PendingEntryCard({
   })();
 
   // Calculate countdown for tickets within the refund window
-  const remainingSeconds = Math.max(0, Math.ceil((REFUND_WINDOW_MS - elapsedMs) / 1000));
-  const showCountdown = entry.awaitingFulfillment === true &&
+  const remainingSeconds = Math.max(
+    0,
+    Math.ceil((REFUND_WINDOW_MS - elapsedMs) / 1000)
+  );
+  const showCountdown =
+    entry.awaitingFulfillment === true &&
     !entry.fulfillDeployHash &&
     !isFulfilled &&
     elapsedMs < REFUND_WINDOW_MS;
@@ -310,16 +314,16 @@ function PendingEntryCard({
                     >
                       {isRefunding ? (
                         <>
-                          <motion.div
+                          {/* <motion.div
                             animate={{ rotate: 360 }}
                             transition={{
                               duration: 1,
                               repeat: Infinity,
                               ease: "linear",
                             }}
-                          >
-                            <Undo2 className="w-4 h-4 mr-2" />
-                          </motion.div>
+                          > */}
+                          <Undo2 className="w-4 h-4 mr-2" />
+                          {/* </motion.div> */}
                           Refunding...
                         </>
                       ) : (
@@ -331,35 +335,42 @@ function PendingEntryCard({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Randomness not fulfilled within 1 minute. Claim your refund.</p>
+                    <p>
+                      Randomness not fulfilled within 1 minute. Claim your
+                      refund.
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
+          </div>
+
+          {/* Transaction links and countdown wrapper */}
+          <div className="w-full">
+            {/* Transaction links under the action button (right-aligned) */}
+            <div className="mt-2 flex flex-wrap justify-start md:justify-end gap-2">
+              {entry.entryDeployHash && (
+                <TxnPill label="Enter" hash={entry.entryDeployHash} />
+              )}
+              {entry.requestDeployHash && (
+                <TxnPill label="Request" hash={entry.requestDeployHash} />
+              )}
+              {entry.fulfillDeployHash && (
+                <TxnPill label="Fulfill" hash={entry.fulfillDeployHash} />
+              )}
+              {entry.settleDeployHash && (
+                <TxnPill label="Settlement" hash={entry.settleDeployHash} />
+              )}
+              {entry.refundDeployHash && (
+                <TxnPill label="Refund" hash={entry.refundDeployHash} />
+              )}
+            </div>
 
             {/* Show countdown timer when waiting for refund eligibility */}
             {showCountdown && (
-              <div className="text-sm text-gray-400 text-center md:text-right mt-1">
+              <div className="text-sm text-gray-400 text-center md:text-right mt-2 tabular-nums min-w-[200px] md:ml-auto">
                 Refund available in {remainingSeconds}s
               </div>
-            )}
-          </div>
-          {/* Transaction links under the action button (right-aligned) */}
-          <div className="mt-2 flex flex-wrap justify-start md:justify-end gap-2">
-            {entry.entryDeployHash && (
-              <TxnPill label="Enter" hash={entry.entryDeployHash} />
-            )}
-            {entry.requestDeployHash && (
-              <TxnPill label="Request" hash={entry.requestDeployHash} />
-            )}
-            {entry.fulfillDeployHash && (
-              <TxnPill label="Fulfill" hash={entry.fulfillDeployHash} />
-            )}
-            {entry.settleDeployHash && (
-              <TxnPill label="Settlement" hash={entry.settleDeployHash} />
-            )}
-            {entry.refundDeployHash && (
-              <TxnPill label="Refund" hash={entry.refundDeployHash} />
             )}
           </div>
         </div>
@@ -656,8 +667,8 @@ export function Dashboard({
                 },
                 style: {
                   background: "#202020",
-                  color: "#00ffff",
-                  border: "2px solid #00ffff",
+                  color: "#ff8c00",
+                  border: "2px solid #ff8c00",
                 },
               });
               void onRefresh?.();
@@ -979,10 +990,17 @@ export function Dashboard({
                                 </Badge>
                               )}
                               {entry.status === "lost" && (
-                                <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/50 text-sm">
-                                  <XCircle className="w-3 h-3 mr-1" />
-                                  No Win
-                                </Badge>
+                                entry.refundDeployHash ? (
+                                  <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/50 text-sm">
+                                    <Undo2 className="w-3 h-3 mr-1" />
+                                    Refunded
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-gray-500/20 text-gray-400 border-gray-500/50 text-sm">
+                                    <XCircle className="w-3 h-3 mr-1" />
+                                    No Win
+                                  </Badge>
+                                )
                               )}
                             </div>
                             <div className="text-sm md:text-base text-gray-400 space-y-1.5 md:space-y-1">
@@ -1000,7 +1018,8 @@ export function Dashboard({
                               {entry.prizeAmount && entry.prizeAmount > 0 && (
                                 <div className="mt-2 md:mt-1 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-2 md:p-2 inline-block">
                                   <span className="inline-flex items-center leading-none text-yellow-300 neon-text-yellow text-base md:text-lg font-black">
-                                    Won:{formatNumber(entry.prizeAmount)} CSPR 🎉
+                                    Won:{formatNumber(entry.prizeAmount)} CSPR
+                                    🎉
                                   </span>
                                 </div>
                               )}
@@ -1032,9 +1051,7 @@ export function Dashboard({
                               <div className="text-5xl">🎉</div>
                             )}
                             {entry.status === "lost" && (
-                              <div className="text-5xl opacity-30">
-                                😔
-                              </div>
+                              <div className="text-5xl opacity-30">😔</div>
                             )}
                           </div>
                         </div>
